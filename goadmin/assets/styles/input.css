@@ -1,0 +1,297 @@
+@import "tailwindcss";
+
+@theme {
+  --color-admin-accent: #b45309;
+  --color-admin-accent-soft: #fff7ed;
+  --color-admin-ink: #111827;
+  --color-admin-muted: #6b7280;
+  --color-admin-surface: #ffffff;
+  --color-admin-body: #f7f4ee;
+}
+
+body {
+  @apply m-0 bg-[--color-admin-body] text-[--color-admin-ink] antialiased;
+  font-family: "Inter", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+}
+
+.admin-frame {
+  @apply flex min-h-screen;
+}
+
+.admin-sidebar {
+  @apply box-border w-[260px] bg-slate-900 p-6 text-slate-50;
+}
+
+.admin-brand {
+  @apply mb-6 flex items-center gap-3;
+}
+
+.admin-brand-mark {
+  @apply grid h-11 w-11 place-items-center rounded-2xl bg-amber-700 font-bold text-white;
+}
+
+.admin-brand-name {
+  @apply text-xl font-bold;
+}
+
+.admin-brand-sub,
+.panel-copy,
+.muted,
+.tree-copy,
+.detail-label,
+.metric-hint,
+.login-copy {
+  @apply text-sm text-slate-500;
+}
+
+.admin-main {
+  @apply flex-1 p-6;
+}
+
+.admin-topbar {
+  @apply mb-6 flex flex-col items-start justify-between gap-4 lg:flex-row lg:items-start;
+}
+
+.admin-page-title,
+.panel-title,
+.login-title {
+  @apply m-0 text-3xl font-semibold tracking-tight text-slate-900;
+}
+
+.admin-page-desc {
+  @apply mt-1.5 text-sm text-slate-500;
+}
+
+.admin-topbar-right {
+  @apply flex items-center gap-3;
+}
+
+.admin-user {
+  @apply rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium shadow-sm;
+}
+
+.admin-content,
+.panel,
+.metric-card,
+.login-card {
+  @apply rounded-3xl border border-slate-200 bg-white shadow-[0_20px_50px_rgba(15,23,42,0.05)];
+}
+
+.admin-content {
+  @apply border-none bg-transparent p-0 shadow-none;
+}
+
+.nav-group {
+  @apply mb-2;
+}
+
+.nav-link,
+.nav-label {
+  @apply flex items-center gap-3 rounded-2xl px-3 py-2.5 text-slate-50 no-underline transition;
+}
+
+.nav-link.is-active,
+.nav-link:hover {
+  @apply bg-white/10;
+}
+
+.nav-children {
+  @apply pl-4;
+}
+
+.panel {
+  @apply p-6;
+}
+
+.panel-head,
+.actions-row,
+.toolbar,
+.panel-foot {
+  @apply flex flex-col items-start justify-between gap-3 lg:flex-row lg:items-center;
+}
+
+.toolbar {
+  @apply my-5 flex-wrap;
+}
+
+.toolbar-search,
+.toolbar-filter input,
+.toolbar-filter select,
+.field input,
+.field textarea,
+.field select {
+  @apply box-border w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-amber-700 focus:ring-4 focus:ring-amber-100;
+}
+
+.toolbar-search {
+  @apply max-w-xs;
+}
+
+.toolbar-filter {
+  @apply grid min-w-[180px] gap-1.5 text-sm font-medium text-slate-600;
+}
+
+.admin-table {
+  @apply w-full border-collapse text-sm;
+}
+
+.admin-table th,
+.admin-table td {
+  @apply border-b border-slate-200 px-3 py-3.5 text-left align-top;
+}
+
+.admin-table th a {
+  @apply text-slate-900 no-underline;
+}
+
+.actions {
+  @apply flex flex-wrap items-center gap-3;
+}
+
+.actions form {
+  @apply m-0;
+}
+
+.actions a,
+.page-link {
+  @apply text-amber-700 no-underline;
+}
+
+.btn {
+  @apply inline-flex cursor-pointer items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-900 no-underline transition hover:-translate-y-0.5;
+}
+
+.btn-primary {
+  @apply border-amber-700 bg-amber-700 text-white hover:bg-amber-800;
+}
+
+.btn-danger {
+  @apply border-rose-700 bg-rose-700 text-white hover:bg-rose-800;
+}
+
+.btn-ghost {
+  @apply bg-white;
+}
+
+.pagination {
+  @apply flex flex-wrap gap-2;
+}
+
+.page-link {
+  @apply rounded-xl border border-slate-300 bg-white px-3 py-2;
+}
+
+.page-link.is-current {
+  @apply border-slate-900 bg-slate-900 text-white;
+}
+
+.stack {
+  @apply grid gap-4;
+}
+
+.field {
+  @apply grid gap-2 text-sm font-medium text-slate-700;
+}
+
+.field textarea {
+  @apply min-h-36;
+}
+
+.display-field {
+  @apply rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800;
+}
+
+.detail-list {
+  @apply grid gap-3;
+}
+
+.detail-row {
+  @apply grid gap-4 border-b border-slate-200 py-3 lg:grid-cols-[180px_1fr];
+}
+
+.detail-divider {
+  @apply mt-3 pt-4 text-sm font-semibold uppercase tracking-[0.18em] text-slate-900;
+}
+
+.tree-list {
+  @apply list-none pl-5;
+}
+
+.tree-card {
+  @apply rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3;
+}
+
+.tree-title {
+  @apply text-sm font-semibold text-slate-900;
+}
+
+.tree-node {
+  @apply mb-3 grid gap-2;
+}
+
+.card-grid {
+  @apply grid gap-4 md:grid-cols-2 xl:grid-cols-4;
+}
+
+.metric-card {
+  @apply p-5;
+}
+
+.metric-title {
+  @apply text-sm font-medium text-slate-500;
+}
+
+.metric-value {
+  @apply my-2 text-4xl font-bold text-slate-900;
+}
+
+.flash {
+  @apply mb-4 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900;
+}
+
+.flash-error {
+  @apply border-rose-300 bg-rose-50 text-rose-900;
+}
+
+.login-shell {
+  @apply grid min-h-screen place-items-center px-6 py-10;
+  background: radial-gradient(circle at top left, #fff7ed, #f5f3ff 52%, #eef2ff);
+}
+
+.login-card {
+  @apply w-full max-w-md p-8;
+}
+
+.login-brand {
+  @apply mb-4 inline-flex rounded-full bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800;
+}
+
+.empty {
+  @apply rounded-2xl border border-dashed border-slate-300 px-6 py-8 text-sm text-slate-500;
+}
+
+.top-gap {
+  @apply mt-4;
+}
+
+.badge {
+  @apply inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide;
+}
+
+.badge-ok {
+  @apply bg-emerald-100 text-emerald-800;
+}
+
+.badge-warn {
+  @apply bg-amber-100 text-amber-800;
+}
+
+@media (max-width: 960px) {
+  .admin-frame {
+    @apply block;
+  }
+
+  .admin-sidebar {
+    @apply w-auto;
+  }
+}

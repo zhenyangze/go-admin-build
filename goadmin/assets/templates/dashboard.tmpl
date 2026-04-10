@@ -1,0 +1,11 @@
+{{define "dashboard"}}
+<div class="card-grid">
+  {{range .Cards}}
+  <article class="metric-card">
+    <div class="metric-title">{{.Title}}</div>
+    <div class="metric-value">{{.Value}}</div>
+    <div class="metric-hint">{{.Hint}}</div>
+  </article>
+  {{end}}
+</div>
+{{end}}

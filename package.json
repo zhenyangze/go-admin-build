@@ -1,0 +1,11 @@
+{
+  "name": "go-admin-build",
+  "private": true,
+  "scripts": {
+    "build:css": "npx @tailwindcss/cli -i ./goadmin/assets/styles/input.css -o ./goadmin/assets/styles/admin.css --minify"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.14",
+    "tailwindcss": "^4.1.14"
+  }
+}

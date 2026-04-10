@@ -1,0 +1,32 @@
+{{define "login"}}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login | {{.Title}}</title>
+  <link rel="stylesheet" href="{{.Prefix}}/assets/admin.css">
+</head>
+<body class="login-shell">
+  <div class="login-card">
+    <div class="login-brand">Go Admin</div>
+    <h1 class="login-title">Sign in</h1>
+    <p class="login-copy">Dcat-inspired admin framework for Go.</p>
+    {{if .Error}}
+    <div class="flash flash-error">{{.Error}}</div>
+    {{end}}
+    <form method="post" action="{{.Prefix}}/login" class="stack">
+      <label class="field">
+        <span>Username</span>
+        <input name="username" type="text" placeholder="admin">
+      </label>
+      <label class="field">
+        <span>Password</span>
+        <input name="password" type="password" placeholder="admin">
+      </label>
+      <button class="btn btn-primary" type="submit">Login</button>
+    </form>
+  </div>
+</body>
+</html>
+{{end}}

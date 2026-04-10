@@ -1,0 +1,58 @@
+{{define "form"}}
+<div class="panel">
+  <div class="panel-head">
+    <div>
+      <h2 class="panel-title">{{.Title}}</h2>
+      <p class="panel-copy">{{.Description}}</p>
+    </div>
+    <a class="btn btn-ghost" href="{{.BackURL}}">Back</a>
+  </div>
+  <form class="stack" method="post" action="{{.Action}}">
+    {{if eq .Method "PUT"}}
+    <input type="hidden" name="_method" value="PUT">
+    {{end}}
+    <input type="hidden" name="_csrf" value="{{.CSRF}}">
+    {{range .Fields}}
+      {{if eq .Type "hidden"}}
+      <input type="hidden" name="{{.Name}}" value="{{.Value}}">
+      {{else if eq .Type "display"}}
+      <div class="field">
+        <span>{{.Label}}</span>
+        <div class="display-field">{{.Value}}</div>
+      </div>
+      {{else if eq .Type "textarea"}}
+      <label class="field">
+        <span>{{.Label}}{{if .Required}} *{{end}}</span>
+        <textarea name="{{.Name}}" placeholder="{{.Placeholder}}">{{.Value}}</textarea>
+        {{if .Help}}<small>{{.Help}}</small>{{end}}
+      </label>
+      {{else if eq .Type "select"}}
+      <label class="field">
+        <span>{{.Label}}{{if .Required}} *{{end}}</span>
+        <select name="{{.Name}}">
+          {{range .Options}}
+          <option value="{{.Value}}" {{if .Selected}}selected{{end}}>{{.Label}}</option>
+          {{end}}
+        </select>
+        {{if .Help}}<small>{{.Help}}</small>{{end}}
+      </label>
+      {{else}}
+      <label class="field">
+        <span>{{.Label}}{{if .Required}} *{{end}}</span>
+        <input name="{{.Name}}" type="{{.Type}}" value="{{.Value}}" placeholder="{{.Placeholder}}" {{if .Readonly}}readonly{{end}}>
+        {{if .Help}}<small>{{.Help}}</small>{{end}}
+      </label>
+      {{end}}
+    {{end}}
+    <div class="actions-row">
+      <button class="btn btn-primary" type="submit">{{.SubmitLabel}}</button>
+    </div>
+  </form>
+  {{if .ShowDelete}}
+  <form method="post" action="{{.DeleteAction}}" onsubmit="return confirm('Delete this record?')" class="top-gap">
+    <input type="hidden" name="_csrf" value="{{.CSRF}}">
+    <button class="btn btn-danger" type="submit">{{.DeleteLabel}}</button>
+  </form>
+  {{end}}
+</div>
+{{end}}

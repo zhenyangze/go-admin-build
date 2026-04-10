@@ -1,0 +1,26 @@
+{{define "show"}}
+<div class="panel">
+  <div class="panel-head">
+    <div>
+      <h2 class="panel-title">{{.Title}}</h2>
+      <p class="panel-copy">{{.Description}}</p>
+    </div>
+    <div class="actions-row">
+      <a class="btn btn-primary" href="{{.EditURL}}">Edit</a>
+      <a class="btn btn-ghost" href="{{.BackURL}}">Back</a>
+    </div>
+  </div>
+  <div class="detail-list">
+    {{range .Items}}
+      {{if eq .Type "divider"}}
+      <div class="detail-divider">{{.Title}}</div>
+      {{else}}
+      <div class="detail-row">
+        <div class="detail-label">{{.Label}}</div>
+        <div class="detail-value">{{safeHTML .Value}}</div>
+      </div>
+      {{end}}
+    {{end}}
+  </div>
+</div>
+{{end}}

@@ -1,0 +1,68 @@
+{{define "layout"}}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{.PageTitle}} | {{.Title}}</title>
+  <link rel="stylesheet" href="{{.Prefix}}/assets/admin.css">
+</head>
+<body class="admin-shell">
+  <div class="admin-frame">
+    <aside class="admin-sidebar">
+      <div class="admin-brand">
+        <div class="admin-brand-mark">GA</div>
+        <div>
+          <div class="admin-brand-name">{{.AppName}}</div>
+          <div class="admin-brand-sub">Tailwind + Go</div>
+        </div>
+      </div>
+      <nav class="admin-nav">
+        {{template "nav-items" .Menu}}
+      </nav>
+    </aside>
+    <main class="admin-main">
+      <header class="admin-topbar">
+        <div>
+          <h1 class="admin-page-title">{{.PageTitle}}</h1>
+          <p class="admin-page-desc">{{.PageDescription}}</p>
+        </div>
+        <div class="admin-topbar-right">
+          <span class="admin-user">{{.User.DisplayName}}</span>
+          <form method="post" action="{{.Prefix}}/logout">
+            <input type="hidden" name="_csrf" value="{{.CSRF}}">
+            <button class="btn btn-ghost" type="submit">Logout</button>
+          </form>
+        </div>
+      </header>
+      {{if .Flash}}
+      <div class="flash">{{.Flash}}</div>
+      {{end}}
+      <section class="admin-content">
+        {{safeHTML .ContentHTML}}
+      </section>
+    </main>
+  </div>
+</body>
+</html>
+{{end}}
+
+{{define "nav-items"}}
+{{range .}}
+  <div class="nav-group">
+    {{if .URL}}
+      <a class="nav-link {{if .Active}}is-active{{end}}" href="{{.URL}}">
+        <span class="nav-icon">{{if .Icon}}{{.Icon}}{{else}}•{{end}}</span>
+        <span>{{.Title}}</span>
+      </a>
+    {{else}}
+      <div class="nav-label">{{.Title}}</div>
+    {{end}}
+    {{if .Children}}
+      <div class="nav-children {{if .Expanded}}is-open{{end}}">
+        {{template "nav-items" .Children}}
+      </div>
+    {{end}}
+  </div>
+{{end}}
+{{end}}

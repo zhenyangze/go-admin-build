@@ -1,0 +1,33 @@
+{{define "tree"}}
+<div class="panel">
+  <div class="panel-head">
+    <div>
+      <h2 class="panel-title">{{.Title}}</h2>
+      <p class="panel-copy">{{.Description}}</p>
+    </div>
+  </div>
+  {{if .Nodes}}
+  <div class="tree-root">
+    {{template "tree-nodes" .Nodes}}
+  </div>
+  {{else}}
+  <div class="empty">{{.EmptyText}}</div>
+  {{end}}
+</div>
+{{end}}
+
+{{define "tree-nodes"}}
+<ul class="tree-list">
+  {{range .}}
+  <li class="tree-node">
+    <div class="tree-card">
+      <div class="tree-title">{{.Title}}</div>
+      {{if .Description}}<div class="tree-copy">{{.Description}}</div>{{end}}
+    </div>
+    {{if .Children}}
+    {{template "tree-nodes" .Children}}
+    {{end}}
+  </li>
+  {{end}}
+</ul>
+{{end}}

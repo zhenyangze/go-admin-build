@@ -1,0 +1,78 @@
+{{define "grid"}}
+<div class="panel">
+  <div class="panel-head">
+    <div>
+      <h2 class="panel-title">{{.Title}}</h2>
+      <p class="panel-copy">{{.Description}}</p>
+    </div>
+    {{if .EnableCreate}}
+    <a class="btn btn-primary" href="{{.CreateURL}}">Create</a>
+    {{end}}
+  </div>
+  <form class="toolbar" method="get" action="{{.CurrentPath}}">
+    <input class="toolbar-search" type="search" name="q" value="{{.QuickSearch}}" placeholder="Quick search">
+    {{range .Filters}}
+      {{if eq .Kind "select"}}
+      <label class="toolbar-filter">
+        <span>{{.Label}}</span>
+        <select name="{{.InputKey}}">
+          <option value="">All</option>
+          {{range .Options}}
+          <option value="{{.Value}}" {{if .Selected}}selected{{end}}>{{.Label}}</option>
+          {{end}}
+        </select>
+      </label>
+      {{else}}
+      <label class="toolbar-filter">
+        <span>{{.Label}}</span>
+        <input type="text" name="{{.InputKey}}" value="{{.Value}}">
+      </label>
+      {{end}}
+    {{end}}
+    <button class="btn btn-ghost" type="submit">Apply</button>
+  </form>
+  <div class="table-wrap">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          {{range .Columns}}
+          <th>
+            {{if .Sortable}}
+            <a href="{{.SortURL}}">{{.Label}}</a>
+            {{else}}
+            {{.Label}}
+            {{end}}
+          </th>
+          {{end}}
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Rows}}
+        <tr>
+          {{range .Cells}}
+          <td>{{safeHTML .}}</td>
+          {{end}}
+          <td class="actions">
+            <a href="{{.ShowURL}}">View</a>
+            <a href="{{.EditURL}}">Edit</a>
+            <form method="post" action="{{.DeleteURL}}" onsubmit="return confirm('Delete this record?')">
+              <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+              <button type="submit">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  <div class="panel-foot">
+    <span class="muted">{{.ResultSummary}}</span>
+    <div class="pagination">
+      {{range .Pagination}}
+      <a class="page-link {{if .Current}}is-current{{end}}" href="{{.URL}}">{{.Label}}</a>
+      {{end}}
+    </div>
+  </div>
+</div>
+{{end}}
