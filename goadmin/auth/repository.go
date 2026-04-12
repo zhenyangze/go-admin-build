@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"errors"
+	"strconv"
 
 	"github.com/zhenyangze/go-admin-build/goadmin"
 	"gorm.io/gorm"
@@ -59,7 +60,7 @@ func (r *UserRepository) List(ctx context.Context, query goadmin.ListQuery) (goa
 	}
 	page, perPage := normalizePage(query)
 	var users []User
-	if err := db.Order("id desc").Offset((page-1)*perPage).Limit(perPage).Find(&users).Error; err != nil {
+	if err := db.Order("id desc").Offset((page - 1) * perPage).Limit(perPage).Find(&users).Error; err != nil {
 		return goadmin.ListResult{}, err
 	}
 	items := make([]any, 0, len(users))
@@ -140,7 +141,7 @@ func (r *RoleRepository) List(ctx context.Context, query goadmin.ListQuery) (goa
 	}
 	page, perPage := normalizePage(query)
 	var roles []Role
-	if err := db.Order("id asc").Offset((page-1)*perPage).Limit(perPage).Find(&roles).Error; err != nil {
+	if err := db.Order("id asc").Offset((page - 1) * perPage).Limit(perPage).Find(&roles).Error; err != nil {
 		return goadmin.ListResult{}, err
 	}
 	items := make([]any, 0, len(roles))
@@ -212,7 +213,7 @@ func (r *PermissionRepository) List(ctx context.Context, query goadmin.ListQuery
 	}
 	page, perPage := normalizePage(query)
 	var permissions []Permission
-	if err := db.Order("id asc").Offset((page-1)*perPage).Limit(perPage).Find(&permissions).Error; err != nil {
+	if err := db.Order("id asc").Offset((page - 1) * perPage).Limit(perPage).Find(&permissions).Error; err != nil {
 		return goadmin.ListResult{}, err
 	}
 	items := make([]any, 0, len(permissions))
@@ -262,7 +263,7 @@ func (r *MenuRepository) List(ctx context.Context, query goadmin.ListQuery) (goa
 	}
 	page, perPage := normalizePage(query)
 	var menus []Menu
-	if err := db.Order("parent_id asc, `order` asc, id asc").Offset((page-1)*perPage).Limit(perPage).Find(&menus).Error; err != nil {
+	if err := db.Order("parent_id asc, `order` asc, id asc").Offset((page - 1) * perPage).Limit(perPage).Find(&menus).Error; err != nil {
 		return goadmin.ListResult{}, err
 	}
 	items := make([]any, 0, len(menus))
@@ -390,6 +391,14 @@ func parseInt(raw string) int {
 	}
 	value, _ := strconv.Atoi(raw)
 	return value
+}
+
+func parseUint(raw string) uint {
+	if raw == "" {
+		return 0
+	}
+	value, _ := strconv.ParseUint(raw, 10, 64)
+	return uint(value)
 }
 
 func toString[T ~uint | ~uint64 | ~uint32 | ~uint16 | ~uint8](value T) string {

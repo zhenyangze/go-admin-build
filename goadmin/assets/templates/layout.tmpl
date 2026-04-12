@@ -38,6 +38,27 @@
       {{if .Flash}}
       <div class="flash">{{.Flash}}</div>
       {{end}}
+      {{if .Helper}}
+      <section class="panel panel-helper">
+        <div class="panel-head">
+          <div>
+            <div class="panel-title-sm">{{.Helper.Title}}</div>
+          </div>
+          {{if .Helper.Tags}}
+          <div class="actions-row">
+            {{range .Helper.Tags}}<span class="badge badge-warn">{{.}}</span>{{end}}
+          </div>
+          {{end}}
+        </div>
+        <div class="detail-list">
+          {{range .Helper.Items}}
+          <div class="detail-row">
+            <div class="metric-hint">{{.}}</div>
+          </div>
+          {{end}}
+        </div>
+      </section>
+      {{end}}
       <section class="admin-content">
         {{safeHTML .ContentHTML}}
       </section>

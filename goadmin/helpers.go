@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/url"
+	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
@@ -157,6 +158,49 @@ func formatValue(value any) string {
 		}
 	}
 	return fmt.Sprint(value)
+}
+
+func formatInputValue(value any, fieldType string) string {
+	if value == nil {
+		return ""
+	}
+	switch typed := value.(type) {
+	case time.Time:
+		if typed.IsZero() {
+			return ""
+		}
+		if fieldType == "date" || fieldType == "daterange" {
+			return typed.Format("2006-01-02")
+		}
+		if fieldType == "datetime-local" {
+			return typed.Format("2006-01-02T15:04")
+		}
+		return typed.Format("2006-01-02 15:04")
+	}
+	return formatValue(value)
+}
+
+func isImagePath(path string) bool {
+	switch strings.ToLower(filepath.Ext(path)) {
+	case ".png", ".jpg", ".jpeg", ".gif", ".webp":
+		return true
+	default:
+		return false
+	}
+}
+
+func splitCommaSeparated(value string) []string {
+	if strings.TrimSpace(value) == "" {
+		return nil
+	}
+	parts := strings.Split(value, ",")
+	out := make([]string, 0, len(parts))
+	for _, part := range parts {
+		if trimmed := strings.TrimSpace(part); trimmed != "" {
+			out = append(out, trimmed)
+		}
+	}
+	return out
 }
 
 func toHTML(value string) template.HTML {

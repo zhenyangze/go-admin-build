@@ -5,8 +5,20 @@
       <h2 class="panel-title">{{.Title}}</h2>
       <p class="panel-copy">{{.Description}}</p>
     </div>
-    {{if .EnableCreate}}
-    <a class="btn btn-primary" href="{{.CreateURL}}">Create</a>
+    {{if .Actions}}
+    <div class="actions-row">
+      {{range .Actions}}
+        {{if eq .Method "GET"}}
+        <a class="{{.Class}}" href="{{.URL}}">{{.Label}}</a>
+        {{else}}
+        <form method="post" action="{{.URL}}" onsubmit="{{if .Confirm}}return confirm('{{.Confirm}}'){{else}}return true{{end}}">
+          {{if ne .Method "POST"}}<input type="hidden" name="_method" value="{{.Method}}">{{end}}
+          <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+          <button class="{{.Class}}" type="submit">{{.Label}}</button>
+        </form>
+        {{end}}
+      {{end}}
+    </div>
     {{end}}
   </div>
   <form class="toolbar" method="get" action="{{.CurrentPath}}">
@@ -48,18 +60,35 @@
         </tr>
       </thead>
       <tbody>
+        {{if .Rows}}
         {{range .Rows}}
         <tr>
           {{range .Cells}}
           <td>{{safeHTML .}}</td>
           {{end}}
           <td class="actions">
-            <a href="{{.ShowURL}}">View</a>
-            <a href="{{.EditURL}}">Edit</a>
-            <form method="post" action="{{.DeleteURL}}" onsubmit="return confirm('Delete this record?')">
-              <input type="hidden" name="_csrf" value="{{$.CSRF}}">
-              <button type="submit">Delete</button>
-            </form>
+            {{if .Actions}}
+              {{range .Actions}}
+                {{if eq .Method "GET"}}
+                <a href="{{.URL}}">{{.Label}}</a>
+                {{else}}
+                <form method="post" action="{{.URL}}" onsubmit="{{if .Confirm}}return confirm('{{.Confirm}}'){{else}}return true{{end}}">
+                  {{if ne .Method "POST"}}<input type="hidden" name="_method" value="{{.Method}}">{{end}}
+                  <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+                  <button type="submit">{{.Label}}</button>
+                </form>
+                {{end}}
+              {{end}}
+            {{else}}
+            <span class="muted">—</span>
+            {{end}}
+          </td>
+        </tr>
+        {{end}}
+        {{else}}
+        <tr>
+          <td colspan="{{.ColSpan}}">
+            <div class="empty empty-inline">{{.EmptyText}}</div>
           </td>
         </tr>
         {{end}}

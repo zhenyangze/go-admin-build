@@ -3,13 +3,22 @@ package main
 import (
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 	"github.com/zhenyangze/go-admin-build/demo"
 )
 
 func main() {
-	app, _, err := demo.Build("tmp/demo/admin.db")
+	dbPath := os.Getenv("DEMO_DB_PATH")
+	if dbPath == "" {
+		dbPath = "tmp/demo/admin.db"
+	}
+	if os.Getenv("DEMO_RESET") == "1" {
+		_ = os.Remove(dbPath)
+		_ = os.RemoveAll(filepath.Join(filepath.Dir(dbPath), "uploads"))
+	}
+	app, _, err := demo.Build(dbPath)
 	if err != nil {
 		log.Fatal(err)
 	}

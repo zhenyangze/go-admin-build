@@ -94,9 +94,35 @@ type DashboardCard struct {
 	Hint  string
 }
 
+// DashboardAction is a quick entry/button inside dashboard widgets.
+type DashboardAction struct {
+	Label string
+	URL   string
+	Style string
+}
+
+// DashboardPanelItem is one row/card inside a dashboard panel.
+type DashboardPanelItem struct {
+	Title       string
+	Description string
+	Value       string
+	URL         string
+	Tags        []string
+}
+
+// DashboardPanel is a reusable dashboard widget block.
+type DashboardPanel struct {
+	Title       string
+	Description string
+	EmptyText   string
+	Actions     []DashboardAction
+	Items       []DashboardPanelItem
+}
+
 // DashboardData powers the home page.
 type DashboardData struct {
 	Title       string
 	Description string
 	Cards       []DashboardCard
+	Panels      []DashboardPanel
 }

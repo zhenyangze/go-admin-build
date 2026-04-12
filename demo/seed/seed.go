@@ -33,8 +33,14 @@ func seedAuth(tx *gorm.DB) error {
 	permissions := []auth.Permission{
 		{Name: "Users", Slug: "users.manage"},
 		{Name: "Roles", Slug: "roles.manage"},
+		{Name: "Permissions", Slug: "permissions.manage"},
+		{Name: "Menus", Slug: "menus.manage"},
 		{Name: "Articles", Slug: "articles.manage"},
 		{Name: "Categories", Slug: "categories.manage"},
+		{Name: "Projects", Slug: "projects.manage"},
+		{Name: "Audit Logs", Slug: "audits.view"},
+		{Name: "Tickets", Slug: "tickets.manage"},
+		{Name: "Reports", Slug: "reports.view"},
 	}
 	for i := range permissions {
 		if err := tx.Create(&permissions[i]).Error; err != nil {
@@ -56,10 +62,16 @@ func seedAuth(tx *gorm.DB) error {
 	securityChildren := []auth.Menu{
 		{ParentID: menus[1].ID, Order: 10, Title: "Users", URI: "users", PermissionSlug: "users.manage"},
 		{ParentID: menus[1].ID, Order: 20, Title: "Roles", URI: "roles", PermissionSlug: "roles.manage"},
+		{ParentID: menus[1].ID, Order: 30, Title: "Permissions", URI: "permissions", PermissionSlug: "permissions.manage"},
+		{ParentID: menus[1].ID, Order: 40, Title: "Menus", URI: "menus/tree", PermissionSlug: "menus.manage"},
 	}
 	contentChildren := []auth.Menu{
 		{ParentID: menus[2].ID, Order: 10, Title: "Articles", URI: "articles", PermissionSlug: "articles.manage"},
 		{ParentID: menus[2].ID, Order: 20, Title: "Categories", URI: "categories/tree", PermissionSlug: "categories.manage"},
+		{ParentID: menus[2].ID, Order: 30, Title: "Projects", URI: "projects", PermissionSlug: "projects.manage"},
+		{ParentID: menus[2].ID, Order: 40, Title: "Audit Logs", URI: "audits", PermissionSlug: "audits.view"},
+		{ParentID: menus[2].ID, Order: 50, Title: "Tickets", URI: "tickets", PermissionSlug: "tickets.manage"},
+		{ParentID: menus[2].ID, Order: 60, Title: "Reports", URI: "reports", PermissionSlug: "reports.view"},
 	}
 	for i := range securityChildren {
 		if err := tx.Create(&securityChildren[i]).Error; err != nil {
@@ -147,11 +159,92 @@ func seedContent(tx *gorm.DB) error {
 	}
 
 	articles := []models.Article{
-		{Title: "Building Admin DSLs in Go", Summary: "How Grid/Form/Show map cleanly into typed builders.", Status: "published", CategoryID: categories[0].ID},
-		{Title: "SQLite Demo Notes", Summary: "A lightweight verification target for the first framework slice.", Status: "draft", CategoryID: categories[len(categories)-1].ID},
+		{Title: "Building Admin DSLs in Go", Summary: "How Grid/Form/Show map cleanly into typed builders.", Status: "published", Featured: true, Tags: "go,admin,dsl", Image: "/admin/assets/admin.css", Gallery: "/admin/assets/admin.css,/admin/assets/admin.css", PublishedAt: time.Now().Add(-4 * time.Hour), VisibleFrom: time.Now().AddDate(0, 0, -7), VisibleTo: time.Now().AddDate(0, 0, 30), CategoryID: categories[0].ID},
+		{Title: "SQLite Demo Notes", Summary: "A lightweight verification target for the first framework slice.", Status: "draft", Featured: false, Tags: "sqlite,demo", VisibleFrom: time.Now().AddDate(0, 0, -2), VisibleTo: time.Now().AddDate(0, 0, 14), CategoryID: categories[len(categories)-1].ID},
 	}
 	for i := range articles {
 		if err := tx.Create(&articles[i]).Error; err != nil {
+			return err
+		}
+	}
+	faqs := []models.ArticleFAQ{
+		{ArticleID: articles[0].ID, Sort: 1, Question: "Why Go?", Answer: "Static binaries and typed builders."},
+		{ArticleID: articles[0].ID, Sort: 2, Question: "Why Dcat-style DSL?", Answer: "Fast admin screens with clear structure."},
+	}
+	if err := tx.Create(&faqs).Error; err != nil {
+		return err
+	}
+	links := []models.ArticleLink{
+		{ArticleID: articles[0].ID, Sort: 1, Label: "Repository", URL: "https://example.com/repo"},
+		{ArticleID: articles[0].ID, Sort: 2, Label: "Docs", URL: "https://example.com/docs"},
+	}
+	if err := tx.Create(&links).Error; err != nil {
+		return err
+	}
+
+	if err := tx.Model(&models.Project{}).Count(&count).Error; err != nil {
+		return err
+	}
+	if count == 0 {
+		projects := []models.Project{
+			{Name: "Framework Launch", Owner: "Alice", Status: "active", Budget: 120000, StartsAt: time.Now().AddDate(0, -1, 0), EndsAt: time.Now().AddDate(0, 2, 0), Description: "Deliver the first public demo and adoption docs."},
+			{Name: "Operations Dashboard", Owner: "Bob", Status: "planning", Budget: 80000, StartsAt: time.Now().AddDate(0, 0, 7), EndsAt: time.Now().AddDate(0, 3, 0), Description: "Build the second wave of admin operational tooling."},
+		}
+		for i := range projects {
+			if err := tx.Create(&projects[i]).Error; err != nil {
+				return err
+			}
+		}
+		milestones := []models.ProjectMilestone{
+			{ProjectID: projects[0].ID, Sort: 1, Title: "Core modules done", Deadline: time.Now().AddDate(0, 0, 14)},
+			{ProjectID: projects[0].ID, Sort: 2, Title: "Demo smoke stable", Deadline: time.Now().AddDate(0, 0, 30)},
+			{ProjectID: projects[1].ID, Sort: 1, Title: "PRD approved", Deadline: time.Now().AddDate(0, 0, 10)},
+		}
+		if err := tx.Create(&milestones).Error; err != nil {
+			return err
+		}
+	}
+	if err := tx.Model(&models.Ticket{}).Count(&count).Error; err != nil {
+		return err
+	}
+	if count == 0 {
+		var projects []models.Project
+		if err := tx.Order("id asc").Find(&projects).Error; err != nil {
+			return err
+		}
+		if len(projects) > 0 {
+			tickets := []models.Ticket{
+				{Title: "Polish dashboard spacing", ProjectID: projects[0].ID, Assignee: "Alice", Priority: "high", Status: "open", Description: "Tighten the top-level dashboard layout and labels.", DueDate: time.Now().AddDate(0, 0, 7)},
+				{Title: "Add smoke coverage for tickets", ProjectID: projects[0].ID, Assignee: "Bob", Priority: "medium", Status: "in_progress", Description: "Extend smoke script and integration coverage for the ticket module.", DueDate: time.Now().AddDate(0, 0, 14)},
+			}
+			if err := tx.Create(&tickets).Error; err != nil {
+				return err
+			}
+		}
+	}
+	if err := tx.Model(&models.ReportSnapshot{}).Count(&count).Error; err != nil {
+		return err
+	}
+	if count == 0 {
+		reports := []models.ReportSnapshot{
+			{Name: "Weekly Signups", Metric: "signups", Dimension: "weekly", Value: 428, Trend: "up", SnapshotAt: time.Now().Add(-24 * time.Hour), Description: "Weekly user signup total compared with the previous period."},
+			{Name: "Project Throughput", Metric: "deliveries", Dimension: "monthly", Value: 18, Trend: "stable", SnapshotAt: time.Now().Add(-48 * time.Hour), Description: "Completed project milestones within the current month."},
+			{Name: "Support Backlog", Metric: "tickets", Dimension: "daily", Value: 11, Trend: "down", SnapshotAt: time.Now().Add(-2 * time.Hour), Description: "Open ticket backlog at the last reporting checkpoint."},
+		}
+		if err := tx.Create(&reports).Error; err != nil {
+			return err
+		}
+	}
+	if err := tx.Model(&models.AuditLog{}).Count(&count).Error; err != nil {
+		return err
+	}
+	if count == 0 {
+		logs := []models.AuditLog{
+			{Actor: "admin", Action: "create", Resource: "article", ResourceID: "1", Level: "info", IP: "127.0.0.1", Detail: "Created the first seeded article.", CreatedAt: time.Now().Add(-6 * time.Hour)},
+			{Actor: "admin", Action: "update", Resource: "project", ResourceID: "1", Level: "warning", IP: "127.0.0.1", Detail: "Adjusted project delivery dates after review.", CreatedAt: time.Now().Add(-3 * time.Hour)},
+			{Actor: "system", Action: "smoke", Resource: "demo", ResourceID: "n/a", Level: "info", IP: "127.0.0.1", Detail: "Automated smoke validation completed successfully.", CreatedAt: time.Now().Add(-30 * time.Minute)},
+		}
+		if err := tx.Create(&logs).Error; err != nil {
 			return err
 		}
 	}

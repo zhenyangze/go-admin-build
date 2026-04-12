@@ -4,11 +4,14 @@ import (
 	"bytes"
 	"context"
 	"embed"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"html/template"
+	"mime/multipart"
 	"net/http"
 	"net/url"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -25,13 +28,16 @@ type dashboardFunc func(context.Context) (DashboardData, error)
 
 // App is the reusable admin HTTP handler.
 type App struct {
-	cfg         Config
-	auth        AuthService
-	templates   *template.Template
-	dashboard   dashboardFunc
-	resourceMap map[string]Resource
-	resources   []Resource
-	css         []byte
+	cfg            Config
+	auth           AuthService
+	templates      *template.Template
+	dashboard      dashboardFunc
+	dashboardPages map[string]DashboardPage
+	routes         map[string]Route
+	resourceMap    map[string]Resource
+	resources      []Resource
+	css            []byte
+	uploadForm     *http.ServeMux
 }
 
 // New creates a new admin application.
@@ -61,11 +67,13 @@ func New(cfg Config, authService AuthService) (*App, error) {
 	}
 
 	return &App{
-		cfg:         cfg,
-		auth:        authService,
-		templates:   tmpl,
-		resourceMap: map[string]Resource{},
-		css:         css,
+		cfg:            cfg,
+		auth:           authService,
+		templates:      tmpl,
+		dashboardPages: map[string]DashboardPage{},
+		routes:         map[string]Route{},
+		resourceMap:    map[string]Resource{},
+		css:            css,
 	}, nil
 }
 
@@ -79,6 +87,18 @@ func (a *App) Register(resource Resource) {
 // SetDashboard configures a custom dashboard callback.
 func (a *App) SetDashboard(fn func(context.Context) (DashboardData, error)) {
 	a.dashboard = fn
+}
+
+// RegisterDashboardPage adds a custom dashboard-style page under the admin prefix.
+func (a *App) RegisterDashboardPage(page DashboardPage) {
+	page.Path = strings.Trim(page.Path, "/")
+	a.dashboardPages[page.Path] = page
+}
+
+// RegisterRoute adds a custom non-resource route under the admin prefix.
+func (a *App) RegisterRoute(route Route) {
+	route.Path = strings.Trim(route.Path, "/")
+	a.routes[route.Path] = route
 }
 
 // Handler returns the reusable HTTP handler.
@@ -97,6 +117,9 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if normalizePath(r.URL.Path) == joinURL(prefix, "assets", "admin.css") {
 		w.Header().Set("Content-Type", "text/css; charset=utf-8")
 		_, _ = w.Write(a.css)
+		return
+	}
+	if a.serveUploads(w, r) {
 		return
 	}
 
@@ -119,6 +142,49 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if path == "" {
 		a.handleDashboard(w, r, state, identity)
+		return
+	}
+
+	if page, ok := a.dashboardPages[path]; ok && currentMethod(r) == http.MethodGet {
+		allowed, err := a.auth.Authorize(r.Context(), identity, page.Permission)
+		if err != nil {
+			a.writeError(w, http.StatusInternalServerError, err)
+			return
+		}
+		if !allowed {
+			http.NotFound(w, r)
+			return
+		}
+		data, err := page.Build(r.Context(), r, identity)
+		if err != nil {
+			a.writeError(w, http.StatusInternalServerError, err)
+			return
+		}
+		a.renderShell(w, r, state, identity, "dashboard", pageData{
+			PageTitle:       fallback(data.Title, page.Title),
+			PageDescription: fallback(data.Description, page.Description),
+			Content:         a.buildDashboardView(data),
+		})
+		return
+	}
+
+	if route, ok := a.routes[path]; ok {
+		allowed, err := a.auth.Authorize(r.Context(), identity, route.Permission)
+		if err != nil {
+			a.writeError(w, http.StatusInternalServerError, err)
+			return
+		}
+		if !allowed {
+			http.NotFound(w, r)
+			return
+		}
+		if !routeAllows(route, currentMethod(r)) {
+			http.NotFound(w, r)
+			return
+		}
+		if err := route.Handler(w, r, identity); err != nil {
+			a.writeError(w, http.StatusInternalServerError, err)
+		}
 		return
 	}
 
@@ -263,7 +329,7 @@ func (a *App) handleDashboard(w http.ResponseWriter, r *http.Request, state *ses
 	a.renderShell(w, r, state, identity, "dashboard", pageData{
 		PageTitle:       data.Title,
 		PageDescription: data.Description,
-		Content:         dashboardView{Cards: data.Cards},
+		Content:         a.buildDashboardView(data),
 	})
 }
 
@@ -294,8 +360,7 @@ func (a *App) handleGrid(w http.ResponseWriter, r *http.Request, state *sessionS
 	view := gridView{
 		Title:         fallback(builder.Title, resource.Title),
 		Description:   fallback(builder.Description, resource.Description),
-		CreateURL:     joinURL(baseURL, "new"),
-		EnableCreate:  !builder.DisableCreate && resource.BuildForm != nil,
+		Actions:       a.buildGridPageActions(baseURL, builder, resource),
 		Columns:       a.buildGridColumns(r, baseURL, builder, query),
 		Rows:          a.buildGridRows(baseURL, builder, result.Items),
 		Filters:       a.buildGridFilters(builder, query),
@@ -303,12 +368,15 @@ func (a *App) handleGrid(w http.ResponseWriter, r *http.Request, state *sessionS
 		CurrentPath:   baseURL,
 		Pagination:    buildPagination(baseURL, query, result.Total, result.Page, result.PerPage),
 		ResultSummary: fmt.Sprintf("Total %d records", result.Total),
+		EmptyText:     fallback(resource.EmptyText, "No records yet."),
+		ColSpan:       len(builder.Columns) + 1,
 		CSRF:          state.CSRF,
 	}
 
 	a.renderShell(w, r, state, identity, "grid", pageData{
 		PageTitle:       view.Title,
 		PageDescription: view.Description,
+		Helper:          a.resourceHelper(resource),
 		Content:         view,
 	})
 }
@@ -324,6 +392,7 @@ func (a *App) handleNewForm(w http.ResponseWriter, r *http.Request, state *sessi
 	a.renderShell(w, r, state, identity, "form", pageData{
 		PageTitle:       fallback(builder.Title, "Create "+resource.Title),
 		PageDescription: fallback(builder.Description, resource.Description),
+		Helper:          a.resourceHelper(resource),
 		Content:         view,
 	})
 }
@@ -344,6 +413,7 @@ func (a *App) handleEditForm(w http.ResponseWriter, r *http.Request, state *sess
 	a.renderShell(w, r, state, identity, "form", pageData{
 		PageTitle:       fallback(builder.Title, "Edit "+resource.Title),
 		PageDescription: fallback(builder.Description, resource.Description),
+		Helper:          a.resourceHelper(resource),
 		Content:         view,
 	})
 }
@@ -364,6 +434,7 @@ func (a *App) handleShow(w http.ResponseWriter, r *http.Request, state *sessionS
 	a.renderShell(w, r, state, identity, "show", pageData{
 		PageTitle:       fallback(builder.Title, resource.Title+" detail"),
 		PageDescription: fallback(builder.Description, resource.Description),
+		Helper:          a.resourceHelper(resource),
 		Content:         view,
 	})
 }
@@ -384,6 +455,7 @@ func (a *App) handleTree(w http.ResponseWriter, r *http.Request, state *sessionS
 	a.renderShell(w, r, state, identity, "tree", pageData{
 		PageTitle:       fallback(builder.Title, resource.Title+" tree"),
 		PageDescription: fallback(builder.Description, resource.Description),
+		Helper:          a.resourceHelper(resource),
 		Content: treeView{
 			Title:       fallback(builder.Title, resource.Title+" tree"),
 			Description: fallback(builder.Description, resource.Description),
@@ -393,12 +465,14 @@ func (a *App) handleTree(w http.ResponseWriter, r *http.Request, state *sessionS
 	})
 }
 
-func (a *App) handleCreate(w http.ResponseWriter, r *http.Request, state *sessionState, _ *Identity, resource Resource) {
+func (a *App) handleCreate(w http.ResponseWriter, r *http.Request, state *sessionState, identity *Identity, resource Resource) {
 	if resource.BuildForm == nil {
 		http.NotFound(w, r)
 		return
 	}
-	if err := r.ParseForm(); err != nil {
+	builder := form.New()
+	resource.BuildForm(builder)
+	if err := a.parseFormRequest(resource, r); err != nil {
 		a.writeError(w, http.StatusBadRequest, err)
 		return
 	}
@@ -407,19 +481,38 @@ func (a *App) handleCreate(w http.ResponseWriter, r *http.Request, state *sessio
 		return
 	}
 	values := a.formValues(resource)
-	if err := resource.Repository.Create(r.Context(), values(r)); err != nil {
+	submitted, err := values(r)
+	if err != nil {
 		a.writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	if fieldErrors := a.validateForm(builder, submitted, nil); len(fieldErrors) > 0 {
+		a.cleanupSubmittedUploads(r.Context(), resource, submitted)
+		a.renderFormError(w, r, state, identity, resource, builder, nil, "", submitted, fieldErrors, "Please correct the highlighted fields.")
+		return
+	}
+	if err := resource.Repository.Create(r.Context(), submitted); err != nil {
+		a.cleanupSubmittedUploads(r.Context(), resource, submitted)
+		a.renderFormError(w, r, state, identity, resource, builder, nil, "", submitted, nil, err.Error())
 		return
 	}
 	http.Redirect(w, r, joinURL(a.cfg.Prefix, resource.Path)+"?flash=created", http.StatusFound)
 }
 
-func (a *App) handleUpdate(w http.ResponseWriter, r *http.Request, state *sessionState, _ *Identity, resource Resource, id string) {
+func (a *App) handleUpdate(w http.ResponseWriter, r *http.Request, state *sessionState, identity *Identity, resource Resource, id string) {
 	if resource.BuildForm == nil {
 		http.NotFound(w, r)
 		return
 	}
-	if err := r.ParseForm(); err != nil {
+	builder := form.New()
+	resource.BuildForm(builder)
+	existing, err := resource.Repository.Get(r.Context(), id)
+	if err != nil {
+		a.writeError(w, http.StatusNotFound, err)
+		return
+	}
+	uploadFields := a.uploadFields(resource)
+	if err := a.parseFormRequest(resource, r); err != nil {
 		a.writeError(w, http.StatusBadRequest, err)
 		return
 	}
@@ -428,10 +521,22 @@ func (a *App) handleUpdate(w http.ResponseWriter, r *http.Request, state *sessio
 		return
 	}
 	values := a.formValues(resource)
-	if err := resource.Repository.Update(r.Context(), id, values(r)); err != nil {
+	submitted, err := values(r)
+	if err != nil {
 		a.writeError(w, http.StatusBadRequest, err)
 		return
 	}
+	if fieldErrors := a.validateForm(builder, submitted, existing); len(fieldErrors) > 0 {
+		a.cleanupSubmittedUploads(r.Context(), resource, submitted)
+		a.renderFormError(w, r, state, identity, resource, builder, existing, id, submitted, fieldErrors, "Please correct the highlighted fields.")
+		return
+	}
+	if err := resource.Repository.Update(r.Context(), id, submitted); err != nil {
+		a.cleanupSubmittedUploads(r.Context(), resource, submitted)
+		a.renderFormError(w, r, state, identity, resource, builder, existing, id, submitted, nil, err.Error())
+		return
+	}
+	a.cleanupReplacedUploads(r.Context(), existing, uploadFields, submitted)
 	http.Redirect(w, r, joinURL(a.cfg.Prefix, resource.Path, id)+"?flash=updated", http.StatusFound)
 }
 
@@ -444,30 +549,285 @@ func (a *App) handleDelete(w http.ResponseWriter, r *http.Request, state *sessio
 		a.writeError(w, http.StatusBadRequest, errors.New("invalid csrf token"))
 		return
 	}
+	var existing any
+	var uploadFields []*form.Field
+	if uploadFields = a.uploadFields(resource); len(uploadFields) > 0 {
+		record, err := resource.Repository.Get(r.Context(), id)
+		if err == nil {
+			existing = record
+		}
+	}
 	if err := resource.Repository.Delete(r.Context(), id); err != nil {
 		a.writeError(w, http.StatusBadRequest, err)
 		return
 	}
+	a.cleanupDeletedUploads(r.Context(), existing, uploadFields)
 	http.Redirect(w, r, joinURL(a.cfg.Prefix, resource.Path)+"?flash=deleted", http.StatusFound)
 }
 
-func (a *App) formValues(resource Resource) func(*http.Request) map[string]string {
+func (a *App) formValues(resource Resource) func(*http.Request) (Values, error) {
 	builder := form.New()
 	resource.BuildForm(builder)
-	return func(r *http.Request) map[string]string {
-		values := map[string]string{}
+	return func(r *http.Request) (Values, error) {
+		values := Values{}
 		for _, field := range builder.Fields {
 			if field.Type == form.FieldDisplay {
 				continue
 			}
-			raw := r.FormValue(field.Name)
-			if field.Type == form.FieldPassword && raw == "" {
+			if field.Type == form.FieldRepeater {
+				encoded, err := collectRepeaterValue(r.Form, field)
+				if err != nil {
+					return nil, err
+				}
+				values[field.Name] = []string{encoded}
 				continue
 			}
-			values[field.Name] = raw
+			if field.Type == form.FieldUpload {
+				files := uploadHeaders(r, field.Name)
+				locations := make([]string, 0, len(files))
+				if !field.Multiple && len(files) == 0 {
+					file, header, err := r.FormFile(field.Name)
+					if err == nil {
+						files = []*multipart.FileHeader{header}
+						location, saveErr := func() (string, error) {
+							defer file.Close()
+							if err := a.validateUpload(field, header); err != nil {
+								return "", err
+							}
+							return a.saveUpload(r.Context(), file, header)
+						}()
+						if saveErr != nil {
+							return nil, saveErr
+						}
+						if strings.TrimSpace(location) != "" {
+							locations = append(locations, location)
+						}
+					}
+				}
+				if len(files) == 0 {
+					continue
+				}
+				if len(locations) == 0 {
+					for _, header := range files {
+						if err := a.validateUpload(field, header); err != nil {
+							return nil, err
+						}
+						file, err := header.Open()
+						if err != nil {
+							return nil, err
+						}
+						location, saveErr := a.saveUpload(r.Context(), file, header)
+						file.Close()
+						if saveErr != nil {
+							return nil, saveErr
+						}
+						if strings.TrimSpace(location) != "" {
+							locations = append(locations, location)
+						}
+					}
+				}
+				if len(locations) > 0 {
+					values[field.Name] = locations
+				}
+				continue
+			}
+			collectFieldValues(values, r.Form, field.Name, field.Type)
+			if field.SecondName != "" {
+				collectFieldValues(values, r.Form, field.SecondName, form.FieldDate)
+			}
 		}
-		return values
+		return values, nil
 	}
+}
+
+func uploadHeaders(r *http.Request, name string) []*multipart.FileHeader {
+	if r.MultipartForm == nil || r.MultipartForm.File == nil {
+		return nil
+	}
+	return r.MultipartForm.File[name]
+}
+
+func (a *App) parseFormRequest(resource Resource, r *http.Request) error {
+	builder := form.New()
+	resource.BuildForm(builder)
+	for _, field := range builder.Fields {
+		if field.Type == form.FieldUpload {
+			return r.ParseMultipartForm(32 << 20)
+		}
+	}
+	return r.ParseForm()
+}
+
+func (a *App) uploadFields(resource Resource) []*form.Field {
+	if resource.BuildForm == nil {
+		return nil
+	}
+	builder := form.New()
+	resource.BuildForm(builder)
+	fields := make([]*form.Field, 0)
+	for _, field := range builder.Fields {
+		if field.Type == form.FieldUpload {
+			fields = append(fields, field)
+		}
+	}
+	return fields
+}
+
+func (a *App) cleanupReplacedUploads(ctx context.Context, record any, fields []*form.Field, submitted Values) {
+	if record == nil {
+		return
+	}
+	for _, field := range fields {
+		newValues, ok := submitted[field.Name]
+		if !ok || len(newValues) == 0 {
+			continue
+		}
+		oldValues := a.uploadValuesFromRecord(record, field)
+		for _, oldValue := range oldValues {
+			keep := false
+			for _, newValue := range newValues {
+				if oldValue == newValue {
+					keep = true
+					break
+				}
+			}
+			if !keep {
+				_ = a.deleteUpload(ctx, oldValue)
+			}
+		}
+	}
+}
+
+func (a *App) cleanupSubmittedUploads(ctx context.Context, resource Resource, submitted Values) {
+	for _, field := range a.uploadFields(resource) {
+		for _, value := range submitted.All(field.Name) {
+			_ = a.deleteUpload(ctx, value)
+		}
+	}
+}
+
+func (a *App) validateForm(builder *form.Builder, submitted Values, record any) map[string]string {
+	fieldErrors := map[string]string{}
+	for _, field := range builder.Fields {
+		if field.Type == form.FieldDisplay || field.Type == form.FieldHidden {
+			continue
+		}
+		currentValue := strings.TrimSpace(submitted.First(field.Name))
+		existingValues := a.uploadValuesFromRecord(record, field)
+		switch field.Type {
+		case form.FieldPassword:
+			if field.Required && record == nil && currentValue == "" {
+				fieldErrors[field.Name] = "This field is required."
+			}
+		case form.FieldMulti:
+			if field.Required && len(submitted.All(field.Name)) == 0 {
+				fieldErrors[field.Name] = "Select at least one option."
+			}
+		case form.FieldUpload:
+			if field.Required && len(submitted.All(field.Name)) == 0 && len(existingValues) == 0 {
+				fieldErrors[field.Name] = "Please upload a file."
+			}
+		case form.FieldRepeater:
+			if field.Required {
+				raw := strings.TrimSpace(submitted.First(field.Name))
+				if strings.TrimSpace(raw) == "" {
+					fieldErrors[field.Name] = "Please add at least one item."
+				}
+			}
+		case form.FieldDateRange:
+			start := strings.TrimSpace(submitted.First(field.Name))
+			end := strings.TrimSpace(submitted.First(field.SecondName))
+			if field.Required && (start == "" || end == "") {
+				fieldErrors[field.Name] = "Please provide both start and end dates."
+				continue
+			}
+			if (start == "") != (end == "") {
+				fieldErrors[field.Name] = "Start and end dates must be provided together."
+				continue
+			}
+			if start != "" && end != "" && start > end {
+				fieldErrors[field.Name] = "Start date must be before or equal to end date."
+			}
+		default:
+			if field.Required && currentValue == "" {
+				fieldErrors[field.Name] = "This field is required."
+			}
+		}
+	}
+	return fieldErrors
+}
+
+func (a *App) renderFormError(w http.ResponseWriter, r *http.Request, state *sessionState, identity *Identity, resource Resource, builder *form.Builder, record any, id string, submitted Values, fieldErrors map[string]string, message string) {
+	w.WriteHeader(http.StatusBadRequest)
+	view := a.buildFormViewState(resource, builder, record, state.CSRF, id, submitted, fieldErrors, message)
+	a.renderShell(w, r, state, identity, "form", pageData{
+		PageTitle:       view.Title,
+		PageDescription: view.Description,
+		Content:         view,
+	})
+}
+
+func (a *App) cleanupDeletedUploads(ctx context.Context, record any, fields []*form.Field) {
+	if record == nil {
+		return
+	}
+	for _, field := range fields {
+		for _, value := range a.uploadValuesFromRecord(record, field) {
+			_ = a.deleteUpload(ctx, value)
+		}
+	}
+}
+
+func (a *App) uploadValuesFromRecord(record any, field *form.Field) []string {
+	path := field.Name
+	if field.ValuePath != "" {
+		path = field.ValuePath
+	}
+	value := valueFromPath(record, path)
+	if value == nil {
+		return nil
+	}
+	if field.Multiple {
+		switch typed := value.(type) {
+		case string:
+			return splitCommaSeparated(typed)
+		case []string:
+			return typed
+		default:
+			return splitCommaSeparated(formatValue(value))
+		}
+	}
+	return []string{formatValue(value)}
+}
+
+func collectFieldValues(values Values, formValues map[string][]string, name string, fieldType form.FieldType) {
+	submitted, ok := formValues[name]
+	if !ok {
+		if fieldType == form.FieldMulti {
+			values[name] = nil
+		} else if fieldType == form.FieldSwitch {
+			values[name] = []string{"0"}
+		}
+		return
+	}
+	raw := append([]string(nil), submitted...)
+	if fieldType == form.FieldPassword && len(raw) > 0 && strings.TrimSpace(raw[0]) == "" {
+		return
+	}
+	if fieldType == form.FieldMulti {
+		cleaned := make([]string, 0, len(raw))
+		for _, value := range raw {
+			if trimmed := strings.TrimSpace(value); trimmed != "" {
+				cleaned = append(cleaned, trimmed)
+			}
+		}
+		values[name] = cleaned
+		return
+	}
+	if len(raw) == 0 || strings.TrimSpace(raw[0]) == "" {
+		return
+	}
+	values[name] = raw[:1]
 }
 
 func (a *App) renderShell(w http.ResponseWriter, r *http.Request, state *sessionState, identity *Identity, contentTemplate string, data pageData) {
@@ -490,6 +850,7 @@ func (a *App) renderShell(w http.ResponseWriter, r *http.Request, state *session
 		CSRF:            state.CSRF,
 		ContentHTML:     a.renderPartial(contentTemplate, data.Content),
 		Message:         data.Message,
+		Helper:          data.Helper,
 	}
 	if err := a.templates.ExecuteTemplate(w, "layout", page); err != nil {
 		a.writeError(w, http.StatusInternalServerError, err)
@@ -512,7 +873,11 @@ func currentMethod(r *http.Request) string {
 	if r.Method != http.MethodPost {
 		return r.Method
 	}
-	_ = r.ParseForm()
+	if strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data") {
+		_ = r.ParseMultipartForm(32 << 20)
+	} else {
+		_ = r.ParseForm()
+	}
 	if override := r.FormValue("_method"); override != "" {
 		return strings.ToUpper(override)
 	}
@@ -542,6 +907,7 @@ type pageData struct {
 	PageTitle       string
 	PageDescription string
 	Message         string
+	Helper          *helperPanelView
 	Content         any
 }
 
@@ -559,6 +925,7 @@ type layoutData struct {
 	CSRF            string
 	ContentHTML     template.HTML
 	Message         string
+	Helper          *helperPanelView
 }
 
 type menuItemView struct {
@@ -571,7 +938,36 @@ type menuItemView struct {
 }
 
 type dashboardView struct {
-	Cards []DashboardCard
+	Cards  []DashboardCard
+	Panels []dashboardPanelView
+}
+
+type dashboardPanelView struct {
+	Title       string
+	Description string
+	EmptyText   string
+	Actions     []dashboardActionView
+	Items       []dashboardPanelItemView
+}
+
+type dashboardActionView struct {
+	Label string
+	URL   string
+	Class string
+}
+
+type dashboardPanelItemView struct {
+	Title       string
+	Description string
+	Value       string
+	URL         string
+	Tags        []string
+}
+
+type helperPanelView struct {
+	Title string
+	Tags  []string
+	Items []string
 }
 
 type gridView struct {
@@ -581,11 +977,12 @@ type gridView struct {
 	Filters       []gridFilterView
 	Columns       []gridColumnView
 	Rows          []gridRowView
+	Actions       []gridActionView
 	Pagination    []paginationLink
-	CreateURL     string
-	EnableCreate  bool
 	CurrentPath   string
 	ResultSummary string
+	EmptyText     string
+	ColSpan       int
 	CSRF          string
 }
 
@@ -611,10 +1008,16 @@ type gridColumnView struct {
 }
 
 type gridRowView struct {
-	Cells     []template.HTML
-	ShowURL   string
-	EditURL   string
-	DeleteURL string
+	Cells   []template.HTML
+	Actions []gridActionView
+}
+
+type gridActionView struct {
+	Label   string
+	URL     string
+	Method  string
+	Confirm string
+	Class   string
 }
 
 type paginationLink struct {
@@ -627,8 +1030,10 @@ type paginationLink struct {
 type formView struct {
 	Title        string
 	Description  string
+	Message      string
 	Action       string
 	Method       string
+	Enctype      string
 	DeleteAction string
 	ShowDelete   bool
 	BackURL      string
@@ -639,15 +1044,40 @@ type formView struct {
 }
 
 type formFieldView struct {
+	Name              string
+	SecondName        string
+	Label             string
+	Type              string
+	Value             string
+	SecondValue       string
+	Values            []string
+	Checked           bool
+	Multiple          bool
+	FileURL           string
+	FileURLs          []string
+	IsImage           bool
+	RepeaterFields    []repeaterChildView
+	RepeaterRows      []repeaterRowView
+	Error             string
+	Help              string
+	Required          bool
+	Readonly          bool
+	Placeholder       string
+	SecondPlaceholder string
+	Options           []gridOptionView
+}
+
+type repeaterChildView struct {
 	Name        string
 	Label       string
 	Type        string
-	Value       string
-	Help        string
-	Required    bool
-	Readonly    bool
 	Placeholder string
 	Options     []gridOptionView
+}
+
+type repeaterRowView struct {
+	Index  int
+	Values map[string]string
 }
 
 type showView struct {
@@ -695,6 +1125,60 @@ func (a *App) buildGridColumns(r *http.Request, baseURL string, builder *grid.Bu
 	return columns
 }
 
+func (a *App) buildDashboardView(data DashboardData) dashboardView {
+	view := dashboardView{Cards: data.Cards}
+	for _, panel := range data.Panels {
+		panelView := dashboardPanelView{
+			Title:       panel.Title,
+			Description: panel.Description,
+			EmptyText:   fallback(panel.EmptyText, "No items yet."),
+		}
+		for _, action := range panel.Actions {
+			if strings.TrimSpace(action.URL) == "" {
+				continue
+			}
+			panelView.Actions = append(panelView.Actions, dashboardActionView{
+				Label: action.Label,
+				URL:   action.URL,
+				Class: dashboardActionClass(action.Style),
+			})
+		}
+		for _, item := range panel.Items {
+			panelView.Items = append(panelView.Items, dashboardPanelItemView{
+				Title:       item.Title,
+				Description: item.Description,
+				Value:       item.Value,
+				URL:         item.URL,
+				Tags:        append([]string(nil), item.Tags...),
+			})
+		}
+		view.Panels = append(view.Panels, panelView)
+	}
+	return view
+}
+
+func (a *App) resourceHelper(resource Resource) *helperPanelView {
+	if len(resource.VerificationSteps) == 0 && len(resource.CapabilityTags) == 0 {
+		return nil
+	}
+	return &helperPanelView{
+		Title: "How to verify this module",
+		Tags:  append([]string(nil), resource.CapabilityTags...),
+		Items: append([]string(nil), resource.VerificationSteps...),
+	}
+}
+
+func dashboardActionClass(style string) string {
+	switch strings.ToLower(strings.TrimSpace(style)) {
+	case "primary":
+		return "btn btn-primary"
+	case "danger":
+		return "btn btn-danger"
+	default:
+		return "btn btn-ghost"
+	}
+}
+
 func (a *App) buildGridRows(baseURL string, builder *grid.Builder, items []any) []gridRowView {
 	rows := make([]gridRowView, 0, len(items))
 	for _, item := range items {
@@ -708,12 +1192,96 @@ func (a *App) buildGridRows(baseURL string, builder *grid.Builder, items []any) 
 			row.Cells = append(row.Cells, toHTML(formatValue(value)))
 		}
 		id := formatValue(valueFromPath(item, "ID"))
-		row.ShowURL = joinURL(baseURL, id)
-		row.EditURL = joinURL(baseURL, id, "edit")
-		row.DeleteURL = joinURL(baseURL, id, "delete")
+		if !builder.DisableView {
+			row.Actions = append(row.Actions, gridActionView{
+				Label:  "View",
+				URL:    joinURL(baseURL, id),
+				Method: http.MethodGet,
+				Class:  gridActionClass(grid.ActionGhost),
+			})
+		}
+		if !builder.DisableEdit {
+			row.Actions = append(row.Actions, gridActionView{
+				Label:  "Edit",
+				URL:    joinURL(baseURL, id, "edit"),
+				Method: http.MethodGet,
+				Class:  gridActionClass(grid.ActionGhost),
+			})
+		}
+		if !builder.DisableDelete {
+			row.Actions = append(row.Actions, gridActionView{
+				Label:   "Delete",
+				URL:     joinURL(baseURL, id, "delete"),
+				Method:  http.MethodPost,
+				Confirm: "Delete this record?",
+				Class:   gridActionClass(grid.ActionDanger),
+			})
+		}
+		for _, action := range builder.RowActions {
+			if action == nil || action.URL == nil {
+				continue
+			}
+			url := strings.TrimSpace(action.URL(item))
+			if url == "" {
+				continue
+			}
+			method := strings.ToUpper(strings.TrimSpace(action.Method))
+			if method == "" {
+				method = http.MethodGet
+			}
+			row.Actions = append(row.Actions, gridActionView{
+				Label:   action.Label,
+				URL:     url,
+				Method:  method,
+				Confirm: action.Confirm,
+				Class:   gridActionClass(action.Style),
+			})
+		}
 		rows = append(rows, row)
 	}
 	return rows
+}
+
+func (a *App) buildGridPageActions(baseURL string, builder *grid.Builder, resource Resource) []gridActionView {
+	actions := make([]gridActionView, 0, len(builder.PageActions)+1)
+	if !builder.DisableCreate && resource.BuildForm != nil {
+		actions = append(actions, gridActionView{
+			Label:  fallback(builder.CreateLabel, "Create"),
+			URL:    joinURL(baseURL, "new"),
+			Method: http.MethodGet,
+			Class:  gridActionClass(grid.ActionPrimary),
+		})
+	}
+	for _, action := range builder.PageActions {
+		if action == nil || strings.TrimSpace(action.URL) == "" {
+			continue
+		}
+		method := strings.ToUpper(strings.TrimSpace(action.Method))
+		if method == "" {
+			method = http.MethodGet
+		}
+		actions = append(actions, gridActionView{
+			Label:   action.Label,
+			URL:     action.URL,
+			Method:  method,
+			Confirm: action.Confirm,
+			Class:   gridActionClass(action.Style),
+		})
+	}
+	return actions
+}
+
+func gridActionClass(style grid.ActionStyle) string {
+	switch style {
+	case grid.ActionPrimary:
+		return "btn btn-primary"
+	case grid.ActionDanger:
+		return "btn btn-danger"
+	case grid.ActionGhost:
+		return "btn btn-ghost"
+	default:
+		return "btn btn-ghost"
+	}
 }
 
 func (a *App) buildGridFilters(builder *grid.Builder, query ListQuery) []gridFilterView {
@@ -771,17 +1339,23 @@ func buildPagination(baseURL string, query ListQuery, total int64, page, perPage
 }
 
 func (a *App) buildFormView(resource Resource, builder *form.Builder, record any, csrf, id string) formView {
+	return a.buildFormViewState(resource, builder, record, csrf, id, nil, nil, "")
+}
+
+func (a *App) buildFormViewState(resource Resource, builder *form.Builder, record any, csrf, id string, submitted Values, fieldErrors map[string]string, message string) formView {
 	baseURL := joinURL(a.cfg.Prefix, resource.Path)
 	view := formView{
 		Title:       fallback(builder.Title, resource.Title),
 		Description: fallback(builder.Description, resource.Description),
+		Message:     message,
 		Action:      baseURL,
 		Method:      http.MethodPost,
+		Enctype:     "application/x-www-form-urlencoded",
 		ShowDelete:  !builder.HideDelete && id != "",
 		DeleteLabel: builder.DeleteLabel,
 		SubmitLabel: builder.SubmitLabel,
 		CSRF:        csrf,
-		BackURL:     baseURL,
+		BackURL:     fallback(builder.CancelBackURL, baseURL),
 	}
 	if id != "" {
 		view.Action = joinURL(baseURL, id)
@@ -790,22 +1364,96 @@ func (a *App) buildFormView(resource Resource, builder *form.Builder, record any
 	}
 	for _, field := range builder.Fields {
 		entry := formFieldView{
-			Name:        field.Name,
-			Label:       field.Label,
-			Type:        string(field.Type),
-			Help:        field.Help,
-			Required:    field.Required,
-			Readonly:    field.Readonly,
-			Placeholder: field.Placeholder,
+			Name:              field.Name,
+			SecondName:        field.SecondName,
+			Label:             field.Label,
+			Type:              string(field.Type),
+			Multiple:          field.Multiple,
+			Help:              field.Help,
+			Required:          field.Required,
+			Readonly:          field.Readonly,
+			Placeholder:       field.Placeholder,
+			SecondPlaceholder: field.SecondPlaceholder,
+			Error:             fieldErrors[field.Name],
+		}
+		if field.Type == form.FieldUpload {
+			view.Enctype = "multipart/form-data"
 		}
 		if record != nil {
-			entry.Value = formatValue(valueFromPath(record, field.Name))
+			valuePath := field.Name
+			if field.ValuePath != "" {
+				valuePath = field.ValuePath
+			}
+			if field.Type == form.FieldMulti {
+				entry.Values = valueListFromPath(record, valuePath)
+			} else if field.Type == form.FieldRepeater {
+				entry.RepeaterFields = buildRepeaterChildViews(field)
+				entry.RepeaterRows = repeaterRowsFromValue(valueFromPath(record, valuePath), field)
+			} else {
+				entry.Value = formatInputValue(valueFromPath(record, valuePath), string(field.Type))
+				if field.Type == form.FieldSwitch {
+					entry.Checked = entry.Value == "true" || entry.Value == "1"
+				}
+				if field.Type == form.FieldUpload {
+					if field.Multiple {
+						entry.FileURLs = a.uploadValuesFromRecord(record, field)
+					} else {
+						entry.FileURL = entry.Value
+						entry.IsImage = isImagePath(entry.FileURL)
+					}
+				}
+				if field.Type == form.FieldDateRange && field.SecondName != "" {
+					secondValuePath := field.SecondName
+					if field.SecondValuePath != "" {
+						secondValuePath = field.SecondValuePath
+					}
+					entry.SecondValue = formatInputValue(valueFromPath(record, secondValuePath), "date")
+				}
+			}
+		}
+		if submitted != nil {
+			if values, ok := submitted[field.Name]; ok {
+				switch field.Type {
+				case form.FieldMulti:
+					entry.Values = append([]string(nil), values...)
+				case form.FieldRepeater:
+					entry.RepeaterFields = buildRepeaterChildViews(field)
+					entry.RepeaterRows = repeaterRowsFromSubmitted(submitted, field)
+				case form.FieldSwitch:
+					entry.Checked = len(values) > 0 && (values[0] == "1" || strings.EqualFold(values[0], "true"))
+				case form.FieldUpload:
+					// Browsers cannot safely repopulate file inputs after failed submit.
+				default:
+					if len(values) > 0 {
+						entry.Value = values[0]
+					}
+				}
+			}
+			if field.Type == form.FieldDateRange && field.SecondName != "" {
+				if values, ok := submitted[field.SecondName]; ok && len(values) > 0 {
+					entry.SecondValue = values[0]
+				}
+			}
+		}
+		if field.Type == form.FieldRepeater && len(entry.RepeaterFields) == 0 {
+			entry.RepeaterFields = buildRepeaterChildViews(field)
+			entry.RepeaterRows = repeaterRowsFromValue(nil, field)
 		}
 		for _, option := range field.Options {
+			selected := entry.Value == option.Value
+			if field.Type == form.FieldMulti {
+				selected = false
+				for _, value := range entry.Values {
+					if value == option.Value {
+						selected = true
+						break
+					}
+				}
+			}
 			entry.Options = append(entry.Options, gridOptionView{
 				Label:    option.Label,
 				Value:    option.Value,
-				Selected: entry.Value == option.Value,
+				Selected: selected,
 			})
 		}
 		view.Fields = append(view.Fields, entry)
@@ -838,6 +1486,141 @@ func (a *App) buildShowView(resource Resource, builder *show.Builder, record any
 		}
 	}
 	return view
+}
+
+func buildRepeaterChildViews(field *form.Field) []repeaterChildView {
+	children := make([]repeaterChildView, 0, len(field.RepeaterFields))
+	for _, child := range field.RepeaterFields {
+		view := repeaterChildView{
+			Name:        child.Name,
+			Label:       child.Label,
+			Type:        string(child.Type),
+			Placeholder: child.Placeholder,
+		}
+		for _, option := range child.Options {
+			view.Options = append(view.Options, gridOptionView{Label: option.Label, Value: option.Value})
+		}
+		children = append(children, view)
+	}
+	return children
+}
+
+func repeaterRowsFromSubmitted(submitted Values, field *form.Field) []repeaterRowView {
+	rowsByIndex := map[int]map[string]string{}
+	for _, child := range field.RepeaterFields {
+		for index := 0; ; index++ {
+			key := fmt.Sprintf("%s.%d.%s", field.Name, index, child.Name)
+			values, ok := submitted[key]
+			if !ok {
+				if index > 20 {
+					break
+				}
+				if _, exists := rowsByIndex[index]; !exists {
+					continue
+				}
+				break
+			}
+			if _, ok := rowsByIndex[index]; !ok {
+				rowsByIndex[index] = map[string]string{}
+			}
+			if len(values) > 0 {
+				rowsByIndex[index][child.Name] = values[0]
+			}
+		}
+	}
+	return normalizeRepeaterRows(rowsByIndex, field.RepeaterMinRows)
+}
+
+func repeaterRowsFromValue(value any, field *form.Field) []repeaterRowView {
+	rowsByIndex := map[int]map[string]string{}
+	switch typed := value.(type) {
+	case string:
+		var decoded []map[string]string
+		if strings.TrimSpace(typed) != "" && json.Unmarshal([]byte(typed), &decoded) == nil {
+			for i, row := range decoded {
+				rowsByIndex[i] = row
+			}
+		}
+	case []map[string]string:
+		for i, row := range typed {
+			rowsByIndex[i] = row
+		}
+	default:
+		rv := reflect.ValueOf(value)
+		for rv.IsValid() && rv.Kind() == reflect.Pointer {
+			if rv.IsNil() {
+				return normalizeRepeaterRows(rowsByIndex, field.RepeaterMinRows)
+			}
+			rv = rv.Elem()
+		}
+		if rv.IsValid() && rv.Kind() == reflect.Slice {
+			for i := 0; i < rv.Len(); i++ {
+				item := rv.Index(i).Interface()
+				row := map[string]string{}
+				for _, child := range field.RepeaterFields {
+					row[child.Name] = formatValue(valueFromPath(item, child.Name))
+				}
+				rowsByIndex[i] = row
+			}
+		}
+	}
+	return normalizeRepeaterRows(rowsByIndex, field.RepeaterMinRows)
+}
+
+func normalizeRepeaterRows(rowsByIndex map[int]map[string]string, minRows int) []repeaterRowView {
+	maxRows := minRows
+	for index := range rowsByIndex {
+		if index+2 > maxRows {
+			maxRows = index + 2
+		}
+	}
+	if maxRows < 1 {
+		maxRows = 1
+	}
+	rows := make([]repeaterRowView, 0, maxRows)
+	for i := 0; i < maxRows; i++ {
+		row := rowsByIndex[i]
+		if row == nil {
+			row = map[string]string{}
+		}
+		rows = append(rows, repeaterRowView{Index: i, Values: row})
+	}
+	return rows
+}
+
+func collectRepeaterValue(formValues map[string][]string, field *form.Field) (string, error) {
+	rows := make([]map[string]string, 0)
+	limit := 12
+	if field.RepeaterMinRows > limit {
+		limit = field.RepeaterMinRows
+	}
+	for index := 0; index < limit; index++ {
+		row := map[string]string{}
+		nonEmpty := false
+		for _, child := range field.RepeaterFields {
+			key := fmt.Sprintf("%s.%d.%s", field.Name, index, child.Name)
+			values := formValues[key]
+			if len(values) == 0 {
+				continue
+			}
+			value := strings.TrimSpace(values[0])
+			if value != "" {
+				nonEmpty = true
+			}
+			row[child.Name] = value
+		}
+		if nonEmpty {
+			rows = append(rows, row)
+		}
+	}
+	if len(rows) == 0 {
+		return "", nil
+	}
+	encoded, err := json.Marshal(rows)
+	if err != nil {
+		return "", err
+	}
+	return string(encoded), nil
 }
 
 func (a *App) menuView(items []NavigationItem, currentPath string) []menuItemView {
@@ -882,4 +1665,16 @@ func cloneQuery(values url.Values) url.Values {
 		}
 	}
 	return cloned
+}
+
+func routeAllows(route Route, method string) bool {
+	if len(route.Methods) == 0 {
+		return true
+	}
+	for _, allowed := range route.Methods {
+		if strings.EqualFold(strings.TrimSpace(allowed), method) {
+			return true
+		}
+	}
+	return false
 }

@@ -1,6 +1,15 @@
 package goadmin
 
-import "github.com/zhenyangze/go-admin-build/goadmin/theme"
+import (
+	"context"
+	"mime/multipart"
+
+	"github.com/zhenyangze/go-admin-build/goadmin/theme"
+)
+
+// UploadHandler stores an uploaded file and returns the persisted public path/URL.
+type UploadHandler func(ctx context.Context, file multipart.File, header *multipart.FileHeader) (string, error)
+type DeleteUploadHandler func(ctx context.Context, publicPath string) error
 
 // Config defines the reusable admin app settings.
 type Config struct {
@@ -9,6 +18,10 @@ type Config struct {
 	Prefix        string
 	SessionSecret string
 	SessionCookie string
+	UploadDir     string
+	UploadPath    string
+	SaveUpload    UploadHandler
+	DeleteUpload  DeleteUploadHandler
 	Theme         theme.Theme
 }
 
@@ -25,6 +38,12 @@ func (c Config) WithDefaults() Config {
 	}
 	if c.SessionCookie == "" {
 		c.SessionCookie = "goadmin_session"
+	}
+	if c.UploadDir == "" {
+		c.UploadDir = "tmp/goadmin/uploads"
+	}
+	if c.UploadPath == "" {
+		c.UploadPath = "uploads"
 	}
 	if c.Theme.Accent == "" {
 		c.Theme = theme.Default()

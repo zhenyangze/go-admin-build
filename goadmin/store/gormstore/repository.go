@@ -32,6 +32,25 @@ type Repository[T any] struct {
 	DefaultOrder string
 	Mutators     map[string]func(string) (any, error)
 	TreeConfig   *TreeConfig
+	Hooks        Hooks[T]
+}
+
+type HookFunc[T any] func(context.Context, HookContext[T]) error
+
+type HookContext[T any] struct {
+	Tx     *gorm.DB
+	Item   *T
+	Values goadmin.Values
+	ID     string
+}
+
+type Hooks[T any] struct {
+	BeforeCreate []HookFunc[T]
+	AfterCreate  []HookFunc[T]
+	BeforeUpdate []HookFunc[T]
+	AfterUpdate  []HookFunc[T]
+	BeforeDelete []HookFunc[T]
+	AfterDelete  []HookFunc[T]
 }
 
 // New creates a generic GORM-backed repository.
@@ -129,7 +148,15 @@ func (r *Repository[T]) Create(ctx context.Context, values goadmin.Values) error
 	if err := r.assignValues(&item, values); err != nil {
 		return err
 	}
-	return r.DB.WithContext(ctx).Create(&item).Error
+	return r.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := r.runHooks(ctx, tx, &item, values, "", r.Hooks.BeforeCreate); err != nil {
+			return err
+		}
+		if err := tx.Create(&item).Error; err != nil {
+			return err
+		}
+		return r.runHooks(ctx, tx, &item, values, "", r.Hooks.AfterCreate)
+	})
 }
 
 // Update mutates an existing record.
@@ -141,12 +168,32 @@ func (r *Repository[T]) Update(ctx context.Context, id string, values goadmin.Va
 	if err := r.assignValues(&item, values); err != nil {
 		return err
 	}
-	return r.DB.WithContext(ctx).Save(&item).Error
+	return r.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := r.runHooks(ctx, tx, &item, values, id, r.Hooks.BeforeUpdate); err != nil {
+			return err
+		}
+		if err := tx.Save(&item).Error; err != nil {
+			return err
+		}
+		return r.runHooks(ctx, tx, &item, values, id, r.Hooks.AfterUpdate)
+	})
 }
 
 // Delete removes a record.
 func (r *Repository[T]) Delete(ctx context.Context, id string) error {
-	return r.DB.WithContext(ctx).Delete(new(T), id).Error
+	return r.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var item T
+		if err := tx.First(&item, id).Error; err != nil {
+			return err
+		}
+		if err := r.runHooks(ctx, tx, &item, nil, id, r.Hooks.BeforeDelete); err != nil {
+			return err
+		}
+		if err := tx.Delete(&item).Error; err != nil {
+			return err
+		}
+		return r.runHooks(ctx, tx, &item, nil, id, r.Hooks.AfterDelete)
+	})
 }
 
 // Tree renders the model as a nested hierarchy when configured.
@@ -193,14 +240,14 @@ func (r *Repository[T]) searchClause() string {
 func (r *Repository[T]) assignValues(target *T, values goadmin.Values) error {
 	root := reflect.ValueOf(target).Elem()
 	for name, list := range values {
-		raw := ""
-		if len(list) > 0 {
-			raw = list[0]
-		}
-		if raw == "" {
-			continue
-		}
 		if mutator, ok := r.Mutators[name]; ok {
+			raw := ""
+			if len(list) > 0 {
+				raw = list[0]
+			}
+			if raw == "" {
+				continue
+			}
 			value, err := mutator(raw)
 			if err != nil {
 				return err
@@ -208,6 +255,20 @@ func (r *Repository[T]) assignValues(target *T, values goadmin.Values) error {
 			if err := setField(root, name, reflect.ValueOf(value)); err != nil {
 				return err
 			}
+			continue
+		}
+		if len(list) > 1 {
+			field := indirectField(root, name)
+			if field.IsValid() && field.CanSet() && field.Kind() == reflect.String {
+				field.SetString(strings.Join(list, ","))
+				continue
+			}
+		}
+		raw := ""
+		if len(list) > 0 {
+			raw = list[0]
+		}
+		if raw == "" {
 			continue
 		}
 		if err := setString(root, name, raw); err != nil {
@@ -228,6 +289,12 @@ func setString(root reflect.Value, name, raw string) error {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		if field.Type().PkgPath() == "time" && field.Type().Name() == "Time" {
 			ts, err := time.Parse("2006-01-02 15:04", raw)
+			if err != nil {
+				ts, err = time.Parse("2006-01-02T15:04", raw)
+			}
+			if err != nil {
+				ts, err = time.Parse("2006-01-02", raw)
+			}
 			if err != nil {
 				ts, err = time.Parse(time.RFC3339, raw)
 			}
@@ -259,6 +326,12 @@ func setString(root reflect.Value, name, raw string) error {
 	default:
 		if field.Type().PkgPath() == "time" && field.Type().Name() == "Time" {
 			ts, err := time.Parse("2006-01-02 15:04", raw)
+			if err != nil {
+				ts, err = time.Parse("2006-01-02T15:04", raw)
+			}
+			if err != nil {
+				ts, err = time.Parse("2006-01-02", raw)
+			}
 			if err != nil {
 				ts, err = time.Parse(time.RFC3339, raw)
 			}
@@ -337,4 +410,21 @@ func repeatArgs(arg string, count int) []any {
 		values = append(values, arg)
 	}
 	return values
+}
+
+func (r *Repository[T]) runHooks(ctx context.Context, tx *gorm.DB, item *T, values goadmin.Values, id string, hooks []HookFunc[T]) error {
+	for _, hook := range hooks {
+		if hook == nil {
+			continue
+		}
+		if err := hook(ctx, HookContext[T]{
+			Tx:     tx,
+			Item:   item,
+			Values: values,
+			ID:     id,
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
 }

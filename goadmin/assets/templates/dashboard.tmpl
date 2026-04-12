@@ -8,4 +8,45 @@
   </article>
   {{end}}
 </div>
+{{if .Panels}}
+<div class="grid gap-6 md:grid-cols-2 mt-6">
+  {{range .Panels}}
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <h2 class="panel-title">{{.Title}}</h2>
+        <p class="panel-copy">{{.Description}}</p>
+      </div>
+      {{if .Actions}}
+      <div class="actions-row">
+        {{range .Actions}}
+        <a class="{{.Class}}" href="{{.URL}}">{{.Label}}</a>
+        {{end}}
+      </div>
+      {{end}}
+    </div>
+    {{if .Items}}
+    <div class="detail-list">
+      {{range .Items}}
+      <div class="detail-row">
+        <div>
+          {{if .URL}}<a class="detail-label" href="{{.URL}}">{{.Title}}</a>{{else}}<div class="detail-label">{{.Title}}</div>{{end}}
+          {{if .Description}}<div class="metric-hint">{{.Description}}</div>{{end}}
+          {{if .Tags}}
+          <div class="dashboard-tags">
+            {{range .Tags}}<span class="badge badge-warn">{{.}}</span>{{end}}
+          </div>
+          {{end}}
+        </div>
+        {{if .Value}}<div class="detail-value">{{.Value}}</div>{{end}}
+      </div>
+      {{end}}
+    </div>
+    {{else}}
+    <div class="empty">{{.EmptyText}}</div>
+    {{end}}
+  </section>
+  {{end}}
+</div>
+{{end}}
 {{end}}

@@ -7,7 +7,10 @@
     </div>
     <a class="btn btn-ghost" href="{{.BackURL}}">Back</a>
   </div>
-  <form class="stack" method="post" action="{{.Action}}">
+  {{if .Message}}
+  <div class="flash flash-error">{{.Message}}</div>
+  {{end}}
+  <form class="stack" method="post" action="{{.Action}}" enctype="{{.Enctype}}">
     {{if eq .Method "PUT"}}
     <input type="hidden" name="_method" value="PUT">
     {{end}}
@@ -24,6 +27,7 @@
       <label class="field">
         <span>{{.Label}}{{if .Required}} *{{end}}</span>
         <textarea name="{{.Name}}" placeholder="{{.Placeholder}}">{{.Value}}</textarea>
+        {{if .Error}}<small class="text-red-600">{{.Error}}</small>{{end}}
         {{if .Help}}<small>{{.Help}}</small>{{end}}
       </label>
       {{else if eq .Type "select"}}
@@ -34,12 +38,92 @@
           <option value="{{.Value}}" {{if .Selected}}selected{{end}}>{{.Label}}</option>
           {{end}}
         </select>
+        {{if .Error}}<small class="text-red-600">{{.Error}}</small>{{end}}
+        {{if .Help}}<small>{{.Help}}</small>{{end}}
+      </label>
+      {{else if eq .Type "multiselect"}}
+      <label class="field">
+        <span>{{.Label}}{{if .Required}} *{{end}}</span>
+        <select name="{{.Name}}" multiple size="{{if gt (len .Options) 6}}6{{else if gt (len .Options) 0}}{{len .Options}}{{else}}4{{end}}">
+          {{range .Options}}
+          <option value="{{.Value}}" {{if .Selected}}selected{{end}}>{{.Label}}</option>
+          {{end}}
+        </select>
+        {{if .Error}}<small class="text-red-600">{{.Error}}</small>{{end}}
+        {{if .Help}}<small>{{.Help}}</small>{{end}}
+      </label>
+      {{else if eq .Type "switch"}}
+      <div class="field">
+        <span>{{.Label}}{{if .Required}} *{{end}}</span>
+        <label class="inline-flex items-center gap-2">
+          <input name="{{.Name}}" type="checkbox" value="1" {{if .Checked}}checked{{end}}>
+          <span>{{if .Checked}}Enabled{{else}}Disabled{{end}}</span>
+        </label>
+        {{if .Error}}<small class="text-red-600">{{.Error}}</small>{{end}}
+        {{if .Help}}<small>{{.Help}}</small>{{end}}
+      </div>
+      {{else if eq .Type "tags"}}
+      <label class="field">
+        <span>{{.Label}}{{if .Required}} *{{end}}</span>
+        <input name="{{.Name}}" type="text" value="{{.Value}}" placeholder="{{if .Placeholder}}{{.Placeholder}}{{else}}go,admin,tailwind{{end}}">
+        {{if .Error}}<small class="text-red-600">{{.Error}}</small>{{end}}
+        {{if .Help}}<small>{{.Help}}</small>{{end}}
+      </label>
+      {{else if eq .Type "daterange"}}
+      <label class="field">
+        <span>{{.Label}}{{if .Required}} *{{end}}</span>
+        <div class="grid gap-3 md:grid-cols-2">
+          <input name="{{.Name}}" type="date" value="{{.Value}}" placeholder="{{.Placeholder}}">
+          <input name="{{.SecondName}}" type="date" value="{{.SecondValue}}" placeholder="{{.SecondPlaceholder}}">
+        </div>
+        {{if .Error}}<small class="text-red-600">{{.Error}}</small>{{end}}
+        {{if .Help}}<small>{{.Help}}</small>{{end}}
+      </label>
+      {{else if eq .Type "repeater"}}
+      <div class="field">
+        <span>{{.Label}}{{if .Required}} *{{end}}</span>
+        {{$field := .}}
+        <div class="stack">
+          {{range $field.RepeaterRows}}
+          {{$row := .}}
+          <div class="grid gap-3 md:grid-cols-2">
+            {{range $field.RepeaterFields}}
+              {{if eq .Type "hidden"}}
+              <input name="{{$field.Name}}.{{$row.Index}}.{{.Name}}" type="hidden" value="{{index $row.Values .Name}}">
+              {{else if eq .Type "textarea"}}
+              <textarea name="{{$field.Name}}.{{$row.Index}}.{{.Name}}" placeholder="{{.Placeholder}}">{{index $row.Values .Name}}</textarea>
+              {{else}}
+              <input name="{{$field.Name}}.{{$row.Index}}.{{.Name}}" type="{{if .Type}}{{.Type}}{{else}}text{{end}}" value="{{index $row.Values .Name}}" placeholder="{{.Placeholder}}">
+              {{end}}
+            {{end}}
+          </div>
+          {{end}}
+        </div>
+        {{if .Error}}<small class="text-red-600">{{.Error}}</small>{{end}}
+        {{if .Help}}<small>{{.Help}}</small>{{end}}
+      </div>
+      {{else if eq .Type "file"}}
+      <label class="field">
+        <span>{{.Label}}{{if .Required}} *{{end}}</span>
+        <input name="{{.Name}}" type="file" {{if .Multiple}}multiple{{end}}>
+        {{if .FileURLs}}
+          <div class="stack">
+            {{range .FileURLs}}
+            <a href="{{.}}" target="_blank" rel="noreferrer">{{.}}</a>
+            {{end}}
+          </div>
+        {{else if .FileURL}}
+          {{if .IsImage}}<img src="{{.FileURL}}" alt="{{.Label}}" class="max-w-xs rounded border mt-2">{{end}}
+          <a href="{{.FileURL}}" target="_blank" rel="noreferrer">{{.FileURL}}</a>
+        {{end}}
+        {{if .Error}}<small class="text-red-600">{{.Error}}</small>{{end}}
         {{if .Help}}<small>{{.Help}}</small>{{end}}
       </label>
       {{else}}
       <label class="field">
         <span>{{.Label}}{{if .Required}} *{{end}}</span>
         <input name="{{.Name}}" type="{{.Type}}" value="{{.Value}}" placeholder="{{.Placeholder}}" {{if .Readonly}}readonly{{end}}>
+        {{if .Error}}<small class="text-red-600">{{.Error}}</small>{{end}}
         {{if .Help}}<small>{{.Help}}</small>{{end}}
       </label>
       {{end}}
