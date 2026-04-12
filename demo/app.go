@@ -362,11 +362,6 @@ func registerUsers(app *goadmin.App, db *gorm.DB) {
 		Permission:     "users.manage",
 		EmptyText:      "No admin users yet.",
 		CapabilityTags: []string{"auth", "rbac"},
-		VerificationSteps: []string{
-			"Open the list and verify the seeded admin user is visible.",
-			"Create a new user and assign one or more roles.",
-			"Open the detail page to verify role association rendering.",
-		},
 		Repository: repo,
 		BuildGrid: func(b *grid.Builder) {
 			b.Column("ID", "ID").SortableColumn()
@@ -407,11 +402,6 @@ func registerRoles(app *goadmin.App, db *gorm.DB) {
 		Permission:     "roles.manage",
 		EmptyText:      "No roles yet.",
 		CapabilityTags: []string{"auth", "rbac"},
-		VerificationSteps: []string{
-			"Open the list and verify seeded roles render.",
-			"Create or edit a role to assign permissions and menus.",
-			"Open the detail page to confirm linked permissions and menus.",
-		},
 		Repository: repo,
 		BuildGrid: func(b *grid.Builder) {
 			b.Column("ID", "ID").SortableColumn()
@@ -450,11 +440,6 @@ func registerPermissions(app *goadmin.App, db *gorm.DB) {
 		Permission:     "permissions.manage",
 		EmptyText:      "No permissions yet.",
 		CapabilityTags: []string{"auth", "rbac"},
-		VerificationSteps: []string{
-			"Open the list and verify permission records render.",
-			"Create a new permission and attach it to a role.",
-			"Confirm it appears in the role detail page.",
-		},
 		Repository: repo,
 		BuildGrid: func(b *grid.Builder) {
 			b.Column("ID", "ID").SortableColumn()
@@ -490,11 +475,6 @@ func registerMenus(app *goadmin.App, db *gorm.DB) {
 		Permission:     "menus.manage",
 		EmptyText:      "No menus yet.",
 		CapabilityTags: []string{"auth", "navigation", "tree"},
-		VerificationSteps: []string{
-			"Open the grid and verify flat menu records render.",
-			"Open Tree View and confirm hierarchy matches the sidebar.",
-			"Create or edit a menu item and verify it appears in the list/tree.",
-		},
 		Repository: repo,
 		BuildGrid: func(b *grid.Builder) {
 			b.Column("ID", "ID").SortableColumn()
@@ -563,11 +543,6 @@ func registerArticles(app *goadmin.App, db *gorm.DB) {
 		Permission:     "articles.manage",
 		EmptyText:      "No articles yet.",
 		CapabilityTags: []string{"complex-crud", "upload", "nested"},
-		VerificationSteps: []string{
-			"Create an article with image upload, gallery files, FAQ rows, and link rows.",
-			"Verify tags, assets, FAQ count, and link count in the grid.",
-			"Open the detail page to confirm friendly rendering for nested and uploaded fields.",
-		},
 		Repository: repo,
 		BuildGrid: func(b *grid.Builder) {
 			b.Column("ID", "ID").SortableColumn()
@@ -712,11 +687,6 @@ func registerCategories(app *goadmin.App, db *gorm.DB) {
 		Permission:     "categories.manage",
 		EmptyText:      "No categories yet.",
 		CapabilityTags: []string{"tree", "generic-crud"},
-		VerificationSteps: []string{
-			"Open the flat list and tree page.",
-			"Create a child category and verify it appears under the right parent.",
-			"Use Tree View to confirm hierarchy rendering.",
-		},
 		Repository: repo,
 		BuildGrid: func(b *grid.Builder) {
 			b.Column("ID", "ID").SortableColumn()
@@ -769,11 +739,6 @@ func registerProjects(app *goadmin.App, db *gorm.DB) {
 		Permission:     "projects.manage",
 		EmptyText:      "No projects yet.",
 		CapabilityTags: []string{"business-crud", "relations"},
-		VerificationSteps: []string{
-			"Create a project with milestone rows.",
-			"Verify milestone counts in the grid.",
-			"Open the detail page to confirm milestone list rendering.",
-		},
 		Repository: repo,
 		BuildGrid: func(b *grid.Builder) {
 			b.Column("ID", "ID").SortableColumn()
@@ -876,11 +841,6 @@ func registerAuditLogs(app *goadmin.App, db *gorm.DB) {
 		Permission:     "audits.view",
 		EmptyText:      "No audit log entries yet.",
 		CapabilityTags: []string{"readonly", "audit"},
-		VerificationSteps: []string{
-			"Open the list and verify seeded audit records render.",
-			"Use level/resource filters and quick search.",
-			"Open a detail page to inspect actor, resource, and detail fields.",
-		},
 		Repository: repo,
 		BuildGrid: func(b *grid.Builder) {
 			b.DisableCreate = true
@@ -948,11 +908,6 @@ func registerTickets(app *goadmin.App, db *gorm.DB) {
 		Permission:     "tickets.manage",
 		EmptyText:      "No tickets yet.",
 		CapabilityTags: []string{"generic-crud", "belongs-to"},
-		VerificationSteps: []string{
-			"Create a ticket and assign it to a project.",
-			"Verify project preload, filters, and status badges in the grid.",
-			"Open the detail page to confirm the belongs-to project renders correctly.",
-		},
 		Repository: repo,
 		BuildGrid: func(b *grid.Builder) {
 			b.Column("ID", "ID").SortableColumn()
@@ -1044,11 +999,6 @@ func registerReports(app *goadmin.App, db *gorm.DB) {
 		Permission:     "reports.view",
 		EmptyText:      "No report snapshots yet.",
 		CapabilityTags: []string{"readonly", "reporting"},
-		VerificationSteps: []string{
-			"Open the list and verify seeded report snapshots render.",
-			"Use trend/dimension filters to narrow the table.",
-			"Open a detail page to inspect metric, dimension, and description fields.",
-		},
 		Repository: repo,
 		BuildGrid: func(b *grid.Builder) {
 			b.DisableCreate = true

@@ -1158,14 +1158,7 @@ func (a *App) buildDashboardView(data DashboardData) dashboardView {
 }
 
 func (a *App) resourceHelper(resource Resource) *helperPanelView {
-	if len(resource.VerificationSteps) == 0 && len(resource.CapabilityTags) == 0 {
-		return nil
-	}
-	return &helperPanelView{
-		Title: "How to verify this module",
-		Tags:  append([]string(nil), resource.CapabilityTags...),
-		Items: append([]string(nil), resource.VerificationSteps...),
-	}
+	return nil
 }
 
 func dashboardActionClass(style string) string {

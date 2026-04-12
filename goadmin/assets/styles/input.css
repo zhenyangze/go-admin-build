@@ -1,313 +1,805 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap');
 
 @theme {
-  --color-admin-accent: #b45309;
-  --color-admin-accent-soft: #fff7ed;
-  --color-admin-ink: #111827;
-  --color-admin-muted: #6b7280;
+  /* Modern Admin Color Palette - Blue Based */
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
+
+  /* Semantic Colors */
+  --color-success-50: #f0fdf4;
+  --color-success-100: #dcfce7;
+  --color-success-500: #22c55e;
+  --color-success-600: #16a34a;
+  --color-success-700: #15803d;
+
+  --color-warning-50: #fffbeb;
+  --color-warning-100: #fef3c7;
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+  --color-warning-700: #b45309;
+
+  --color-danger-50: #fef2f2;
+  --color-danger-100: #fee2e2;
+  --color-danger-500: #ef4444;
+  --color-danger-600: #dc2626;
+  --color-danger-700: #b91c1c;
+
+  /* Neutral Colors */
+  --color-slate-50: #f8fafc;
+  --color-slate-100: #f1f5f9;
+  --color-slate-200: #e2e8f0;
+  --color-slate-300: #cbd5e1;
+  --color-slate-400: #94a3b8;
+  --color-slate-500: #64748b;
+  --color-slate-600: #475569;
+  --color-slate-700: #334155;
+  --color-slate-800: #1e293b;
+  --color-slate-900: #0f172a;
+
+  /* Legacy admin colors (for backwards compatibility) */
+  --color-admin-accent: var(--color-primary-600);
+  --color-admin-accent-soft: var(--color-primary-50);
+  --color-admin-ink: var(--color-slate-900);
+  --color-admin-muted: var(--color-slate-500);
   --color-admin-surface: #ffffff;
-  --color-admin-body: #f7f4ee;
+  --color-admin-body: var(--color-slate-50);
 }
 
+/* Base Styles */
 body {
-  @apply m-0 bg-[--color-admin-body] text-[--color-admin-ink] antialiased;
-  font-family: "Inter", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  @apply m-0 bg-[--color-slate-50] text-[--color-slate-900] antialiased;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
+/* Code font for data display */
+.font-mono {
+  font-family: "Fira Code", "SF Mono", Monaco, monospace;
+}
+
+/* Layout Framework */
 .admin-frame {
   @apply flex min-h-screen;
 }
 
+/* Sidebar Navigation - Modern Dark Theme */
 .admin-sidebar {
-  @apply box-border w-[260px] bg-slate-900 p-6 text-slate-50;
+  @apply box-border w-64 bg-[--color-slate-900] flex flex-col;
+  background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
 }
 
 .admin-brand {
-  @apply mb-6 flex items-center gap-3;
+  @apply flex items-center gap-3 px-5 py-5 border-b border-slate-700/50;
 }
 
 .admin-brand-mark {
-  @apply grid h-11 w-11 place-items-center rounded-2xl bg-amber-700 font-bold text-white;
+  @apply flex h-10 w-10 items-center justify-center rounded-xl;
+  background: linear-gradient(135deg, var(--color-primary-500) 0%, var(--color-primary-700) 100%);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
 }
 
 .admin-brand-name {
-  @apply text-xl font-bold;
+  @apply text-lg font-semibold text-white tracking-tight;
 }
 
-.admin-brand-sub,
-.panel-copy,
-.muted,
-.tree-copy,
-.detail-label,
-.metric-hint,
-.login-copy {
-  @apply text-sm text-slate-500;
+.admin-brand-sub {
+  @apply text-xs text-slate-400 font-medium;
 }
 
-.admin-main {
-  @apply flex-1 p-6;
-}
-
-.admin-topbar {
-  @apply mb-6 flex flex-col items-start justify-between gap-4 lg:flex-row lg:items-start;
-}
-
-.admin-page-title,
-.panel-title,
-.login-title {
-  @apply m-0 text-3xl font-semibold tracking-tight text-slate-900;
-}
-
-.admin-page-desc {
-  @apply mt-1.5 text-sm text-slate-500;
-}
-
-.admin-topbar-right {
-  @apply flex items-center gap-3;
-}
-
-.admin-user {
-  @apply rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium shadow-sm;
-}
-
-.admin-content,
-.panel,
-.metric-card,
-.login-card {
-  @apply rounded-3xl border border-slate-200 bg-white shadow-[0_20px_50px_rgba(15,23,42,0.05)];
-}
-
-.admin-content {
-  @apply border-none bg-transparent p-0 shadow-none;
+/* Navigation */
+.admin-nav {
+  @apply flex-1 overflow-y-auto px-3 py-4;
 }
 
 .nav-group {
-  @apply mb-2;
+  @apply mb-1;
 }
 
-.nav-link,
-.nav-label {
-  @apply flex items-center gap-3 rounded-2xl px-3 py-2.5 text-slate-50 no-underline transition;
+.nav-link {
+  @apply flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-300 no-underline transition-all duration-200;
 }
 
-.nav-link.is-active,
 .nav-link:hover {
-  @apply bg-white/10;
+  @apply text-white bg-slate-800/50;
+}
+
+.nav-link.is-active {
+  @apply text-white bg-[--color-primary-600] font-medium;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+.nav-icon {
+  @apply flex items-center justify-center w-5 h-5 text-slate-400 transition-colors;
+}
+
+.nav-link:hover .nav-icon,
+.nav-link.is-active .nav-icon {
+  @apply text-white;
+}
+
+.nav-label {
+  @apply flex items-center gap-3 px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider;
 }
 
 .nav-children {
-  @apply pl-4;
+  @apply ml-4 pl-3 border-l border-slate-700/50;
 }
 
+.nav-children .nav-link {
+  @apply py-2 text-slate-400;
+}
+
+/* Main Content Area */
+.admin-main {
+  @apply flex-1 flex flex-col min-h-screen overflow-hidden;
+}
+
+/* Top Bar */
+.admin-topbar {
+  @apply flex items-center justify-between px-6 py-4 bg-white border-b border-[--color-slate-200];
+}
+
+.admin-page-title {
+  @apply text-2xl font-semibold text-[--color-slate-900] tracking-tight;
+}
+
+.admin-page-desc {
+  @apply mt-1 text-sm text-[--color-slate-500];
+}
+
+.admin-topbar-right {
+  @apply flex items-center gap-4;
+}
+
+.admin-user {
+  @apply flex items-center gap-2 px-4 py-2 rounded-full bg-[--color-slate-100] text-sm font-medium text-[--color-slate-700];
+}
+
+/* Content Container */
+.admin-content {
+  @apply flex-1 overflow-auto p-6;
+}
+
+/* Panel Component */
 .panel {
-  @apply p-6;
+  @apply bg-white rounded-xl border border-[--color-slate-200] shadow-sm;
 }
 
 .panel-helper {
-  @apply mb-4;
+  @apply mb-6;
+}
+
+.panel-head {
+  @apply flex items-center justify-between px-6 py-4 border-b border-[--color-slate-100];
+}
+
+.panel-title {
+  @apply text-lg font-semibold text-[--color-slate-900];
 }
 
 .panel-title-sm {
-  @apply m-0 text-sm font-semibold uppercase tracking-[0.12em] text-slate-900;
+  @apply text-xs font-semibold text-[--color-slate-500] uppercase tracking-wider;
 }
 
-.panel-head,
-.actions-row,
-.toolbar,
+.panel-copy {
+  @apply text-sm text-[--color-slate-500] mt-1;
+}
+
+.panel-body {
+  @apply p-6;
+}
+
 .panel-foot {
-  @apply flex flex-col items-start justify-between gap-3 lg:flex-row lg:items-center;
+  @apply flex items-center justify-between px-6 py-4 border-t border-[--color-slate-100] bg-[--color-slate-50] rounded-b-xl;
 }
 
+/* Toolbar & Filters */
 .toolbar {
-  @apply my-5 flex-wrap;
-}
-
-.toolbar-search,
-.toolbar-filter input,
-.toolbar-filter select,
-.field input,
-.field textarea,
-.field select {
-  @apply box-border w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-amber-700 focus:ring-4 focus:ring-amber-100;
+  @apply flex flex-wrap items-center gap-4 px-6 py-4 border-b border-[--color-slate-100] bg-[--color-slate-50]/50;
 }
 
 .toolbar-search {
-  @apply max-w-xs;
+  @apply w-64 rounded-lg border border-[--color-slate-300] bg-white px-4 py-2 text-sm;
+  @apply placeholder:text-[--color-slate-400];
+  @apply focus:outline-none focus:border-[--color-primary-500] focus:ring-2 focus:ring-[--color-primary-100];
+  @apply transition-all duration-200;
 }
 
 .toolbar-filter {
-  @apply grid min-w-[180px] gap-1.5 text-sm font-medium text-slate-600;
+  @apply flex flex-col gap-1.5;
+}
+
+.toolbar-filter label {
+  @apply text-xs font-medium text-[--color-slate-500];
+}
+
+.toolbar-filter select,
+.toolbar-filter input {
+  @apply min-w-[160px] rounded-lg border border-[--color-slate-300] bg-white px-3 py-2 text-sm;
+  @apply focus:outline-none focus:border-[--color-primary-500] focus:ring-2 focus:ring-[--color-primary-100];
+  @apply transition-all duration-200;
+}
+
+/* Data Table */
+.table-wrap {
+  @apply overflow-x-auto;
 }
 
 .admin-table {
-  @apply w-full border-collapse text-sm;
+  @apply w-full text-sm;
 }
 
-.admin-table th,
-.admin-table td {
-  @apply border-b border-slate-200 px-3 py-3.5 text-left align-top;
+.admin-table thead {
+  @apply bg-[--color-slate-50];
+}
+
+.admin-table th {
+  @apply px-4 py-3 text-left text-xs font-semibold text-[--color-slate-500] uppercase tracking-wider border-b border-[--color-slate-200];
 }
 
 .admin-table th a {
-  @apply text-slate-900 no-underline;
+  @apply text-[--color-slate-600] hover:text-[--color-primary-600] no-underline transition-colors;
 }
 
+.admin-table td {
+  @apply px-4 py-3.5 border-b border-[--color-slate-100] text-[--color-slate-700];
+}
+
+.admin-table tbody tr {
+  @apply transition-colors duration-150;
+}
+
+.admin-table tbody tr:hover {
+  @apply bg-[--color-slate-50];
+}
+
+.admin-table tbody tr:last-child td {
+  @apply border-b-0;
+}
+
+/* Actions Column */
 .actions {
-  @apply flex flex-wrap items-center gap-3;
+  @apply flex items-center gap-2;
+}
+
+.actions a {
+  @apply text-[--color-primary-600] hover:text-[--color-primary-700] text-sm font-medium no-underline;
+  @apply px-2 py-1 rounded hover:bg-[--color-primary-50] transition-all duration-150;
+}
+
+.actions button {
+  @apply text-sm font-medium text-[--color-danger-600] hover:text-[--color-danger-700];
+  @apply px-2 py-1 rounded hover:bg-[--color-danger-50] transition-all duration-150;
+  @apply bg-transparent border-0 cursor-pointer;
 }
 
 .actions form {
   @apply m-0;
 }
 
-.actions a,
-.page-link {
-  @apply text-amber-700 no-underline;
-}
-
+/* Buttons */
 .btn {
-  @apply inline-flex cursor-pointer items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-900 no-underline transition hover:-translate-y-0.5;
+  @apply inline-flex items-center justify-center gap-2;
+  @apply px-4 py-2 rounded-lg text-sm font-medium;
+  @apply transition-all duration-200;
+  @apply focus:outline-none focus:ring-2 focus:ring-offset-1;
 }
 
 .btn-primary {
-  @apply border-amber-700 bg-amber-700 text-white hover:bg-amber-800;
+  @apply bg-[--color-primary-600] text-white border border-[--color-primary-600];
+  @apply hover:bg-[--color-primary-700] hover:border-[--color-primary-700];
+  @apply focus:ring-[--color-primary-300];
+  @apply shadow-sm hover:shadow-md;
+}
+
+.btn-secondary {
+  @apply bg-white text-[--color-slate-700] border border-[--color-slate-300];
+  @apply hover:bg-[--color-slate-50] hover:text-[--color-slate-900];
+  @apply focus:ring-[--color-slate-200];
 }
 
 .btn-danger {
-  @apply border-rose-700 bg-rose-700 text-white hover:bg-rose-800;
+  @apply bg-[--color-danger-600] text-white border border-[--color-danger-600];
+  @apply hover:bg-[--color-danger-700] hover:border-[--color-danger-700];
+  @apply focus:ring-[--color-danger-300];
 }
 
 .btn-ghost {
-  @apply bg-white;
+  @apply bg-transparent text-[--color-slate-600] border border-transparent;
+  @apply hover:bg-[--color-slate-100] hover:text-[--color-slate-900];
+  @apply focus:ring-[--color-slate-200];
 }
 
+.btn-sm {
+  @apply px-3 py-1.5 text-xs;
+}
+
+.btn-lg {
+  @apply px-6 py-3 text-base;
+}
+
+.btn:disabled,
+.btn[disabled] {
+  @apply opacity-50 cursor-not-allowed pointer-events-none;
+}
+
+/* Loading state for buttons */
+.btn-loading {
+  @apply relative text-transparent;
+}
+
+.btn-loading::after {
+  content: "";
+  @apply absolute inset-0 m-auto w-4 h-4 border-2 border-white/30 border-t-white rounded-full;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Actions Row */
+.actions-row {
+  @apply flex items-center gap-3;
+}
+
+/* Pagination */
 .pagination {
-  @apply flex flex-wrap gap-2;
+  @apply flex items-center gap-1;
 }
 
 .page-link {
-  @apply rounded-xl border border-slate-300 bg-white px-3 py-2;
+  @apply px-3 py-1.5 rounded-lg text-sm font-medium text-[--color-slate-600];
+  @apply border border-[--color-slate-200] bg-white;
+  @apply hover:bg-[--color-slate-50] hover:text-[--color-slate-900];
+  @apply transition-all duration-150;
 }
 
 .page-link.is-current {
-  @apply border-slate-900 bg-slate-900 text-white;
+  @apply bg-[--color-primary-600] text-white border-[--color-primary-600];
 }
 
+.page-link.is-disabled {
+  @apply opacity-50 cursor-not-allowed pointer-events-none;
+}
+
+/* Form Styles */
 .stack {
-  @apply grid gap-4;
+  @apply space-y-5;
 }
 
 .field {
-  @apply grid gap-2 text-sm font-medium text-slate-700;
+  @apply flex flex-col gap-1.5;
+}
+
+.field label,
+.field > span:first-child {
+  @apply text-sm font-medium text-[--color-slate-700];
+}
+
+.field input[type="text"],
+.field input[type="email"],
+.field input[type="password"],
+.field input[type="number"],
+.field input[type="url"],
+.field input[type="tel"],
+.field input[type="date"],
+.field input[type="datetime-local"],
+.field input[type="file"],
+.field textarea,
+.field select {
+  @apply w-full rounded-lg border border-[--color-slate-300] bg-white px-4 py-2.5 text-sm;
+  @apply placeholder:text-[--color-slate-400];
+  @apply focus:outline-none focus:border-[--color-primary-500] focus:ring-2 focus:ring-[--color-primary-100];
+  @apply transition-all duration-200;
+}
+
+.field input[type="file"] {
+  @apply py-2 text-[--color-slate-500];
 }
 
 .field textarea {
-  @apply min-h-36;
+  @apply min-h-[120px] resize-y;
 }
 
+.field select {
+  @apply cursor-pointer;
+}
+
+.field small {
+  @apply text-xs text-[--color-slate-500];
+}
+
+.field small.text-red-600,
+.field .error-message {
+  @apply text-[--color-danger-600] font-medium;
+}
+
+.field input.error,
+.field textarea.error,
+.field select.error {
+  @apply border-[--color-danger-300] focus:border-[--color-danger-500] focus:ring-[--color-danger-100];
+}
+
+.field .required {
+  @apply text-[--color-danger-500] ml-0.5;
+}
+
+/* Checkbox and Radio */
+.field input[type="checkbox"],
+.field input[type="radio"] {
+  @apply w-4 h-4 rounded border-[--color-slate-300] text-[--color-primary-600];
+  @apply focus:ring-[--color-primary-500] focus:ring-2;
+}
+
+/* Inline field layout */
+.inline-field {
+  @apply flex items-center gap-2;
+}
+
+/* Display field (read-only) */
 .display-field {
-  @apply rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800;
+  @apply rounded-lg border border-[--color-slate-200] bg-[--color-slate-50] px-4 py-2.5 text-sm text-[--color-slate-700];
 }
 
+/* Form sections */
+.form-section {
+  @apply mb-6 pb-6 border-b border-[--color-slate-100];
+}
+
+.form-section-title {
+  @apply text-sm font-semibold text-[--color-slate-900] uppercase tracking-wider mb-4;
+}
+
+/* Repeater field */
+.repeater-item {
+  @apply p-4 rounded-lg border border-[--color-slate-200] bg-[--color-slate-50]/50;
+}
+
+.repeater-actions {
+  @apply flex items-center gap-2 mt-3;
+}
+
+/* File upload preview */
+.file-preview {
+  @apply mt-3 p-3 rounded-lg border border-[--color-slate-200] bg-[--color-slate-50];
+}
+
+.file-preview img {
+  @apply max-w-xs rounded-lg border border-[--color-slate-200];
+}
+
+/* Detail/Show Page */
 .detail-list {
-  @apply grid gap-3;
-}
-
-.dashboard-tags {
-  @apply mt-2 flex flex-wrap gap-2;
+  @apply space-y-1;
 }
 
 .detail-row {
-  @apply grid gap-4 border-b border-slate-200 py-3 lg:grid-cols-[180px_1fr];
+  @apply flex flex-col sm:flex-row sm:items-start py-3 border-b border-[--color-slate-100] gap-2 sm:gap-4;
+}
+
+.detail-row:last-child {
+  @apply border-b-0;
+}
+
+.detail-label {
+  @apply sm:w-40 text-sm font-medium text-[--color-slate-500] shrink-0;
+}
+
+.detail-value {
+  @apply text-sm text-[--color-slate-900] flex-1;
 }
 
 .detail-divider {
-  @apply mt-3 pt-4 text-sm font-semibold uppercase tracking-[0.18em] text-slate-900;
+  @apply mt-6 mb-4 text-xs font-semibold text-[--color-slate-400] uppercase tracking-wider;
 }
 
-.tree-list {
-  @apply list-none pl-5;
-}
-
-.tree-card {
-  @apply rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3;
-}
-
-.tree-title {
-  @apply text-sm font-semibold text-slate-900;
-}
-
-.tree-node {
-  @apply mb-3 grid gap-2;
-}
-
-.card-grid {
-  @apply grid gap-4 md:grid-cols-2 xl:grid-cols-4;
-}
-
-.metric-card {
-  @apply p-5;
-}
-
-.metric-title {
-  @apply text-sm font-medium text-slate-500;
-}
-
-.metric-value {
-  @apply my-2 text-4xl font-bold text-slate-900;
-}
-
+/* Flash Messages */
 .flash {
-  @apply mb-4 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900;
+  @apply mb-6 px-4 py-3 rounded-lg text-sm font-medium;
+}
+
+.flash-success {
+  @apply bg-[--color-success-50] text-[--color-success-700] border border-[--color-success-200];
 }
 
 .flash-error {
-  @apply border-rose-300 bg-rose-50 text-rose-900;
+  @apply bg-[--color-danger-50] text-[--color-danger-700] border border-[--color-danger-200];
 }
 
-.login-shell {
-  @apply grid min-h-screen place-items-center px-6 py-10;
-  background: radial-gradient(circle at top left, #fff7ed, #f5f3ff 52%, #eef2ff);
+.flash-warning {
+  @apply bg-[--color-warning-50] text-[--color-warning-700] border border-[--color-warning-200];
 }
 
-.login-card {
-  @apply w-full max-w-md p-8;
+.flash-info {
+  @apply bg-[--color-primary-50] text-[--color-primary-700] border border-[--color-primary-200];
 }
 
-.login-brand {
-  @apply mb-4 inline-flex rounded-full bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800;
+/* Badges */
+.badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
 }
 
+.badge-ok,
+.badge-success {
+  @apply bg-[--color-success-100] text-[--color-success-700];
+}
+
+.badge-warn,
+.badge-warning {
+  @apply bg-[--color-warning-100] text-[--color-warning-700];
+}
+
+.badge-danger,
+.badge-error {
+  @apply bg-[--color-danger-100] text-[--color-danger-700];
+}
+
+.badge-info {
+  @apply bg-[--color-primary-100] text-[--color-primary-700];
+}
+
+.badge-neutral {
+  @apply bg-[--color-slate-100] text-[--color-slate-600];
+}
+
+/* Empty State */
 .empty {
-  @apply rounded-2xl border border-dashed border-slate-300 px-6 py-8 text-sm text-slate-500;
+  @apply flex flex-col items-center justify-center py-12 text-center;
 }
 
 .empty-inline {
-  @apply px-4 py-5;
+  @apply py-8;
 }
 
-.top-gap {
-  @apply mt-4;
+.empty-icon {
+  @apply w-12 h-12 mb-3 text-[--color-slate-300];
 }
 
-.badge {
-  @apply inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide;
+.empty-title {
+  @apply text-sm font-medium text-[--color-slate-900] mb-1;
 }
 
-.badge-ok {
-  @apply bg-emerald-100 text-emerald-800;
+.empty-text {
+  @apply text-sm text-[--color-slate-500];
 }
 
-.badge-warn {
-  @apply bg-amber-100 text-amber-800;
+/* Tree View */
+.tree-list {
+  @apply space-y-1;
 }
 
-@media (max-width: 960px) {
+.tree-node {
+  @apply flex items-center gap-2 py-2 px-3 rounded-lg hover:bg-[--color-slate-50];
+}
+
+.tree-node-icon {
+  @apply w-4 h-4 text-[--color-slate-400];
+}
+
+.tree-node-content {
+  @apply flex-1 text-sm text-[--color-slate-700];
+}
+
+.tree-children {
+  @apply ml-6 pl-4 border-l border-[--color-slate-200] space-y-1;
+}
+
+/* Metric Cards */
+.card-grid {
+  @apply grid gap-4 sm:grid-cols-2 lg:grid-cols-4;
+}
+
+.metric-card {
+  @apply bg-white rounded-xl border border-[--color-slate-200] p-5 shadow-sm;
+}
+
+.metric-title {
+  @apply text-sm font-medium text-[--color-slate-500];
+}
+
+.metric-value {
+  @apply text-3xl font-bold text-[--color-slate-900] mt-2;
+}
+
+.metric-change {
+  @apply inline-flex items-center gap-1 mt-2 text-sm font-medium;
+}
+
+.metric-change.up {
+  @apply text-[--color-success-600];
+}
+
+.metric-change.down {
+  @apply text-[--color-danger-600];
+}
+
+/* Login Page */
+.login-shell {
+  @apply min-h-screen flex items-center justify-center p-6;
+  background: linear-gradient(135deg, #f0f9ff 0%, #f8fafc 50%, #f0fdf4 100%);
+}
+
+.login-card {
+  @apply w-full max-w-md bg-white rounded-2xl border border-[--color-slate-200] p-8 shadow-xl;
+}
+
+.login-brand {
+  @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[--color-primary-50] text-[--color-primary-700] text-sm font-semibold mb-6;
+}
+
+.login-title {
+  @apply text-2xl font-bold text-[--color-slate-900] mb-2;
+}
+
+.login-copy {
+  @apply text-sm text-[--color-slate-500] mb-6;
+}
+
+/* Modal/Screen Overlay */
+.overlay {
+  @apply fixed inset-0 bg-black/50 backdrop-blur-sm z-40;
+}
+
+.modal {
+  @apply fixed inset-0 z-50 flex items-center justify-center p-4;
+}
+
+.modal-content {
+  @apply w-full max-w-lg bg-white rounded-2xl shadow-2xl;
+}
+
+.modal-header {
+  @apply flex items-center justify-between px-6 py-4 border-b border-[--color-slate-100];
+}
+
+.modal-title {
+  @apply text-lg font-semibold text-[--color-slate-900];
+}
+
+.modal-body {
+  @apply p-6;
+}
+
+.modal-footer {
+  @apply flex items-center justify-end gap-3 px-6 py-4 border-t border-[--color-slate-100] bg-[--color-slate-50] rounded-b-2xl;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1024px) {
+  .admin-sidebar {
+    @apply w-20;
+  }
+
+  .admin-brand-name,
+  .admin-brand-sub,
+  .nav-link span,
+  .nav-label {
+    @apply hidden;
+  }
+
+  .nav-link {
+    @apply justify-center px-2;
+  }
+
+  .nav-icon {
+    @apply w-6 h-6;
+  }
+
+  .nav-children {
+    @apply hidden;
+  }
+}
+
+@media (max-width: 768px) {
   .admin-frame {
-    @apply block;
+    @apply flex-col;
   }
 
   .admin-sidebar {
-    @apply w-auto;
+    @apply w-full h-auto order-2;
+    background: linear-gradient(90deg, #0f172a 0%, #1e293b 100%);
   }
+
+  .admin-nav {
+    @apply flex flex-row overflow-x-auto py-2 px-4 gap-1;
+  }
+
+  .nav-group {
+    @apply mb-0;
+  }
+
+  .nav-link {
+    @apply whitespace-nowrap px-4;
+  }
+
+  .admin-main {
+    @apply order-1;
+  }
+
+  .admin-topbar {
+    @apply flex-col items-start gap-4;
+  }
+
+  .toolbar {
+    @apply flex-col items-stretch;
+  }
+
+  .toolbar-search {
+    @apply w-full;
+  }
+
+  .panel-head,
+  .panel-foot {
+    @apply flex-col items-stretch gap-3;
+  }
+
+  .admin-table {
+    @apply text-xs;
+  }
+
+  .admin-table th,
+  .admin-table td {
+    @apply px-2 py-2;
+  }
+}
+
+/* Utility Classes */
+.muted {
+  @apply text-[--color-slate-500];
+}
+
+.text-primary {
+  @apply text-[--color-primary-600];
+}
+
+.text-success {
+  @apply text-[--color-success-600];
+}
+
+.text-warning {
+  @apply text-[--color-warning-600];
+}
+
+.text-danger {
+  @apply text-[--color-danger-600];
+}
+
+.bg-primary {
+  @apply bg-[--color-primary-600];
+}
+
+.bg-success {
+  @apply bg-[--color-success-600];
+}
+
+.bg-warning {
+  @apply bg-[--color-warning-600];
+}
+
+.bg-danger {
+  @apply bg-[--color-danger-600];
+}
+
+/* Focus visible for accessibility */
+*:focus-visible {
+  @apply outline-none ring-2 ring-[--color-primary-500] ring-offset-2;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Selection color */
+::selection {
+  @apply bg-[--color-primary-100] text-[--color-primary-900];
 }
