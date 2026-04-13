@@ -12,6 +12,8 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -1087,13 +1089,75 @@ type formFieldView struct {
 	IsImage           bool
 	RepeaterFields    []repeaterChildView
 	RepeaterRows      []repeaterRowView
+	KeyValueRows      []keyValueRowView
+	KeyPlaceholder    string
+	ValuePlaceholder  string
 	Error             string
 	Help              string
 	Required          bool
 	Readonly          bool
+	Disabled          bool
 	Placeholder       string
 	SecondPlaceholder string
 	Options           []gridOptionView
+	Min               *float64
+	Max               *float64
+	Step              *float64
+	Inline            bool
+	CurrencySymbol    string
+	EditorHeight      int
+	MaskFormat        string
+	SliderMin         *float64
+	SliderMax         *float64
+	SliderStep        *float64
+	SliderPostfix     string
+	AutocompleteURL   string
+	UploadDir         string
+	UploadMaxCount    int
+	IsSortable        bool
+	HtmlContent       string
+	// Complex fields
+	MapProvider           string
+	TreeNodes             []form.TreeNode
+	TreeIDColumn          string
+	TreeTitleColumn       string
+	TreeParentColumn      string
+	TreeExpand            bool
+	TreeAllowParentSelect bool
+	SelectTableURL        string
+	SelectTableTitle      string
+	SelectTableDialogWidth string
+	SelectTableDisplayField string
+	SelectTableValueField string
+	NestedFields          []*form.Field
+	HasManyLabel          string
+	HasManyTableMode      bool
+	// Dynamic data for complex fields
+	TableRows             []tableRowView
+	HasManyRows           []hasManyRowView
+	EmbedsValues          map[string]string
+}
+
+type tableRowView struct {
+	RowIndex  int
+	FieldName string
+	RowValues map[string]string
+}
+
+type hasManyRowView struct {
+	ItemIndex  int
+	FieldName  string
+	ItemLabel  string
+	ItemValues map[string]string
+}
+
+type keyValueRowView struct {
+	FieldName        string
+	Index            int
+	Key              string
+	Value            string
+	KeyPlaceholder   string
+	ValuePlaceholder string
 }
 
 type repeaterChildView struct {
@@ -1419,9 +1483,28 @@ func (a *App) buildFormViewState(resource Resource, builder *form.Builder, recor
 			Help:              field.Help,
 			Required:          field.Required,
 			Readonly:          field.Readonly,
+			Disabled:          field.Disabled,
 			Placeholder:       field.Placeholder,
 			SecondPlaceholder: field.SecondPlaceholder,
 			Error:             fieldErrors[field.Name],
+			Min:               field.MinVal,
+			Max:               field.MaxVal,
+			Step:              field.StepVal,
+			Inline:            field.IsInline,
+			CurrencySymbol:    field.CurrencySymbol,
+			EditorHeight:      field.EditorHeight,
+			KeyPlaceholder:    field.KeyPlaceholder,
+			ValuePlaceholder:  field.ValuePlaceholder,
+			MaskFormat:        field.MaskFormat,
+			SliderMin:         field.SliderMin,
+			SliderMax:         field.SliderMax,
+			SliderStep:        field.SliderStep,
+			SliderPostfix:     field.SliderPostfix,
+			AutocompleteURL:   field.AutocompleteURL,
+			UploadDir:         field.UploadDir,
+			UploadMaxCount:    field.UploadMaxCount,
+			IsSortable:        field.IsSortable,
+			HtmlContent:       field.HtmlContent,
 		}
 		if field.Type == form.FieldUpload {
 			view.Enctype = "multipart/form-data"
@@ -1436,6 +1519,8 @@ func (a *App) buildFormViewState(resource Resource, builder *form.Builder, recor
 			} else if field.Type == form.FieldRepeater {
 				entry.RepeaterFields = buildRepeaterChildViews(field)
 				entry.RepeaterRows = repeaterRowsFromValue(valueFromPath(record, valuePath), field)
+			} else if field.Type == form.FieldKeyValue {
+				entry.KeyValueRows = keyValueRowsFromValue(valueFromPath(record, valuePath), field)
 			} else {
 				entry.Value = formatInputValue(valueFromPath(record, valuePath), string(field.Type))
 				if field.Type == form.FieldSwitch {
@@ -1466,6 +1551,8 @@ func (a *App) buildFormViewState(resource Resource, builder *form.Builder, recor
 				case form.FieldRepeater:
 					entry.RepeaterFields = buildRepeaterChildViews(field)
 					entry.RepeaterRows = repeaterRowsFromSubmitted(submitted, field)
+				case form.FieldKeyValue:
+					entry.KeyValueRows = keyValueRowsFromSubmitted(submitted, field)
 				case form.FieldSwitch:
 					entry.Checked = len(values) > 0 && (values[0] == "1" || strings.EqualFold(values[0], "true"))
 				case form.FieldUpload:
@@ -1485,6 +1572,9 @@ func (a *App) buildFormViewState(resource Resource, builder *form.Builder, recor
 		if field.Type == form.FieldRepeater && len(entry.RepeaterFields) == 0 {
 			entry.RepeaterFields = buildRepeaterChildViews(field)
 			entry.RepeaterRows = repeaterRowsFromValue(nil, field)
+		}
+		if field.Type == form.FieldKeyValue && len(entry.KeyValueRows) == 0 {
+			entry.KeyValueRows = []keyValueRowView{{FieldName: field.Name, Index: 0, Key: "", Value: ""}}
 		}
 		for _, option := range field.Options {
 			selected := entry.Value == option.Value
@@ -1633,6 +1723,142 @@ func normalizeRepeaterRows(rowsByIndex map[int]map[string]string, minRows int) [
 		rows = append(rows, repeaterRowView{Index: i, Values: row})
 	}
 	return rows
+}
+
+// KeyValue helper functions
+func keyValueRowsFromValue(value any, field *form.Field) []keyValueRowView {
+	rows := []keyValueRowView{}
+	if value == nil {
+		return rows
+	}
+	// Parse JSON value
+	var data []map[string]string
+	switch v := value.(type) {
+	case string:
+		if v == "" {
+			return rows
+		}
+		if err := json.Unmarshal([]byte(v), &data); err != nil {
+			return rows
+		}
+	case []map[string]string:
+		data = v
+	case []any:
+		for _, item := range v {
+			if m, ok := item.(map[string]any); ok {
+				row := map[string]string{}
+				for key, val := range m {
+					row[key] = fmt.Sprint(val)
+				}
+				data = append(data, row)
+			}
+		}
+	}
+	for i, item := range data {
+		rows = append(rows, keyValueRowView{
+			FieldName:        field.Name,
+			Index:            i,
+			Key:              item["key"],
+			Value:            item["value"],
+			KeyPlaceholder:   field.KeyPlaceholder,
+			ValuePlaceholder: field.ValuePlaceholder,
+		})
+	}
+	return rows
+}
+
+func keyValueRowsFromSubmitted(submitted map[string][]string, field *form.Field) []keyValueRowView {
+	rows := []keyValueRowView{}
+	// Find all keys with pattern: fieldName[index][key] and fieldName[index][value]
+	keyPattern := regexp.MustCompile(`^` + regexp.QuoteMeta(field.Name) + `\[(\d+)\]\[key\]$`)
+
+	indices := make(map[int]bool)
+	for key := range submitted {
+		if matches := keyPattern.FindStringSubmatch(key); matches != nil {
+			if idx, err := strconv.Atoi(matches[1]); err == nil {
+				indices[idx] = true
+			}
+		}
+	}
+
+	for idx := range indices {
+		keyName := fmt.Sprintf("%s[%d][key]", field.Name, idx)
+		valueName := fmt.Sprintf("%s[%d][value]", field.Name, idx)
+
+		keyVal := ""
+		if vals, ok := submitted[keyName]; ok && len(vals) > 0 {
+			keyVal = vals[0]
+		}
+
+		valueVal := ""
+		if vals, ok := submitted[valueName]; ok && len(vals) > 0 {
+			valueVal = vals[0]
+		}
+
+		rows = append(rows, keyValueRowView{
+			FieldName:        field.Name,
+			Index:            idx,
+			Key:              keyVal,
+			Value:            valueVal,
+			KeyPlaceholder:   field.KeyPlaceholder,
+			ValuePlaceholder: field.ValuePlaceholder,
+		})
+	}
+
+	// Sort by index
+	sort.Slice(rows, func(i, j int) bool {
+		return rows[i].Index < rows[j].Index
+	})
+
+	return rows
+}
+
+func collectKeyValueValue(formValues map[string][]string, field *form.Field) (string, error) {
+	rows := make([]map[string]string, 0)
+
+	keyPattern := regexp.MustCompile(`^` + regexp.QuoteMeta(field.Name) + `\[(\d+)\]\[key\]$`)
+	indices := make(map[int]bool)
+
+	for key := range formValues {
+		if matches := keyPattern.FindStringSubmatch(key); matches != nil {
+			if idx, err := strconv.Atoi(matches[1]); err == nil {
+				indices[idx] = true
+			}
+		}
+	}
+
+	for idx := range indices {
+		keyName := fmt.Sprintf("%s[%d][key]", field.Name, idx)
+		valueName := fmt.Sprintf("%s[%d][value]", field.Name, idx)
+
+		keyVal := ""
+		if vals, ok := formValues[keyName]; ok && len(vals) > 0 {
+			keyVal = vals[0]
+		}
+
+		valueVal := ""
+		if vals, ok := formValues[valueName]; ok && len(vals) > 0 {
+			valueVal = vals[0]
+		}
+
+		// Skip empty rows
+		if keyVal != "" || valueVal != "" {
+			rows = append(rows, map[string]string{
+				"key":   keyVal,
+				"value": valueVal,
+			})
+		}
+	}
+
+	if len(rows) == 0 {
+		return "", nil
+	}
+
+	jsonBytes, err := json.Marshal(rows)
+	if err != nil {
+		return "", err
+	}
+	return string(jsonBytes), nil
 }
 
 func collectRepeaterValue(formValues map[string][]string, field *form.Field) (string, error) {
