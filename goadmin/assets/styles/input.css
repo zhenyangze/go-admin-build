@@ -121,11 +121,13 @@ body.dark {
 /* ===== Layout ===== */
 .admin-shell {
   min-height: 100vh;
+  min-width: 0;
 }
 
 .admin-frame {
   display: flex;
   min-height: 100vh;
+  min-width: 0;
 }
 
 /* ===== Sidebar ===== */
@@ -305,14 +307,36 @@ body.dark {
   background: var(--color-primary);
 }
 
-/* ===== Main Content ===== */
+/* Sidebar Overlay */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 998;
+}
+
+.sidebar-overlay.is-open {
+  display: block;
+}
+
+@media (min-width: 1025px) {
+  .sidebar-overlay.is-open {
+    display: none;
+  }
+}
 .admin-main {
   flex: 1;
   margin-left: var(--sidebar-width);
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-width: 0;
   background: var(--color-bg-page);
+  overflow-x: auto;
 }
 
 body.dark .admin-main {
@@ -331,6 +355,8 @@ body.dark .admin-main {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  min-width: 0;
+  gap: 1rem;
 }
 
 body.dark .admin-topbar {
@@ -342,12 +368,14 @@ body.dark .admin-topbar {
   display: flex;
   align-items: center;
   gap: 1rem;
+  flex-shrink: 0;
 }
 
 .admin-topbar-right {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  flex-shrink: 0;
 }
 
 /* Dark Mode Toggle */
@@ -430,6 +458,7 @@ body.dark .admin-user-name {
 .admin-content {
   flex: 1;
   padding: 1.5rem;
+  min-width: 0;
 }
 
 @media (min-width: 768px) {
@@ -445,6 +474,7 @@ body.dark .admin-user-name {
   border-radius: 0.25rem;
   box-shadow: var(--shadow-default);
   overflow: hidden;
+  min-width: 0;
 }
 
 body.dark .panel {
@@ -464,6 +494,19 @@ body.dark .panel {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 1rem;
+  min-width: 0;
+}
+
+.panel-head > div:first-child {
+  min-width: 0;
+  flex: 1;
+}
+
+.panel-head > div:first-child .panel-title,
+.panel-head > div:first-child .panel-copy {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 body.dark .panel-head {
@@ -708,6 +751,33 @@ body.dark .toolbar-filter input {
 /* ===== Table ===== */
 .table-wrap {
   overflow-x: auto;
+  position: relative;
+}
+
+/* Sticky Actions Column */
+.admin-table th.col-actions,
+.admin-table td.actions {
+  position: sticky;
+  right: 0;
+  background: var(--color-bg-card);
+  z-index: 10;
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.08);
+}
+
+body.dark .admin-table th.col-actions,
+body.dark .admin-table td.actions {
+  background: var(--color-bg-dark-card);
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Header sticky needs different background */
+.admin-table th.col-actions {
+  background: var(--color-bg-hover);
+  z-index: 11;
+}
+
+body.dark .admin-table th.col-actions {
+  background: var(--color-bg-dark-hover);
 }
 
 .admin-table {
@@ -822,6 +892,7 @@ body.dark .admin-table tbody tr:hover {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  flex-shrink: 0;
 }
 
 /* ===== Buttons ===== */

@@ -3,8 +3,8 @@ package seed
 import (
 	"time"
 
-	"github.com/zhenyangze/go-admin-build/demo/models"
-	"github.com/zhenyangze/go-admin-build/goadmin/auth"
+	"github.com/zhenyangze/go-admin-build/examples/demo/models"
+	"github.com/zhenyangze/goadmin/auth"
 	"gorm.io/gorm"
 )
 

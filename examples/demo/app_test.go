@@ -16,12 +16,12 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/zhenyangze/go-admin-build/demo/models"
-	"github.com/zhenyangze/go-admin-build/goadmin"
-	"github.com/zhenyangze/go-admin-build/goadmin/auth"
-	"github.com/zhenyangze/go-admin-build/goadmin/form"
-	"github.com/zhenyangze/go-admin-build/goadmin/grid"
-	"github.com/zhenyangze/go-admin-build/goadmin/show"
+	"github.com/zhenyangze/go-admin-build/examples/demo/models"
+	"github.com/zhenyangze/goadmin"
+	"github.com/zhenyangze/goadmin/auth"
+	"github.com/zhenyangze/goadmin/form"
+	"github.com/zhenyangze/goadmin/grid"
+	"github.com/zhenyangze/goadmin/show"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/zhenyangze/go-admin-build/goadmin"
+	"github.com/zhenyangze/goadmin"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )

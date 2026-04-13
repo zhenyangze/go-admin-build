@@ -16,4 +16,4 @@ echo "    PORT=$PORT"
 echo "    DEMO_DB_PATH=$DEMO_DB_PATH"
 echo "    DEMO_RESET=$DEMO_RESET"
 
-DEMO_DB_PATH="$DEMO_DB_PATH" DEMO_RESET="$DEMO_RESET" PORT="$PORT" go run ./cmd/demo
+DEMO_DB_PATH="$DEMO_DB_PATH" DEMO_RESET="$DEMO_RESET" PORT="$PORT" go run ./examples/demo/cmd/demo

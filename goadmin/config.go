@@ -4,7 +4,7 @@ import (
 	"context"
 	"mime/multipart"
 
-	"github.com/zhenyangze/go-admin-build/goadmin/theme"
+	"github.com/zhenyangze/goadmin/theme"
 )
 
 // UploadHandler stores an uploaded file and returns the persisted public path/URL.

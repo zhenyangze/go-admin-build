@@ -15,10 +15,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/zhenyangze/go-admin-build/goadmin/form"
-	"github.com/zhenyangze/go-admin-build/goadmin/grid"
-	"github.com/zhenyangze/go-admin-build/goadmin/show"
-	"github.com/zhenyangze/go-admin-build/goadmin/tree"
+	"github.com/zhenyangze/goadmin/form"
+	"github.com/zhenyangze/goadmin/grid"
+	"github.com/zhenyangze/goadmin/show"
+	"github.com/zhenyangze/goadmin/tree"
 )
 
 //go:embed assets/templates/*.tmpl assets/styles/admin.css

@@ -6,7 +6,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/zhenyangze/go-admin-build/goadmin"
+	"github.com/zhenyangze/goadmin"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )

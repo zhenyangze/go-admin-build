@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zhenyangze/go-admin-build/goadmin/form"
+	"github.com/zhenyangze/goadmin/form"
 )
 
 func (a *App) uploadBaseURL() string {

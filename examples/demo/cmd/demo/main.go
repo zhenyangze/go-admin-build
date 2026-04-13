@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
-	"github.com/zhenyangze/go-admin-build/demo"
+	"github.com/zhenyangze/go-admin-build/examples/demo"
 )
 
 func main() {

@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/zhenyangze/go-admin-build/goadmin"
+	"github.com/zhenyangze/goadmin"
 	"gorm.io/gorm"
 )
 

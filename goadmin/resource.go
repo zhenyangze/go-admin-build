@@ -4,10 +4,10 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/zhenyangze/go-admin-build/goadmin/form"
-	"github.com/zhenyangze/go-admin-build/goadmin/grid"
-	"github.com/zhenyangze/go-admin-build/goadmin/show"
-	"github.com/zhenyangze/go-admin-build/goadmin/tree"
+	"github.com/zhenyangze/goadmin/form"
+	"github.com/zhenyangze/goadmin/grid"
+	"github.com/zhenyangze/goadmin/show"
+	"github.com/zhenyangze/goadmin/tree"
 )
 
 // Resource describes one admin module with Dcat-like page builders.

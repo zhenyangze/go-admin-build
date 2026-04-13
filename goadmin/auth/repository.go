@@ -5,7 +5,7 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/zhenyangze/go-admin-build/goadmin"
+	"github.com/zhenyangze/goadmin"
 	"gorm.io/gorm"
 )
 

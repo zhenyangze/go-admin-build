@@ -12,7 +12,7 @@ It keeps the page-builder workflow of `Grid`, `Form`, `Show`, `Tree`, `Auth`, `R
 
 ## What is included
 
-- reusable package under `goadmin/`
+- reusable package under `goadmin/` (module: `github.com/zhenyangze/goadmin`)
 - built-in auth/RBAC/menu schema under `goadmin/auth`
 - generic GORM repository under `goadmin/store/gormstore`
 - DSL builders for `grid`, `form`, `show`, and `tree`
@@ -22,7 +22,7 @@ It keeps the page-builder workflow of `Grid`, `Form`, `Show`, `Tree`, `Auth`, `R
 - one parent resource can now host multiple relation-backed repeaters (demo: `Article -> FAQs + Links`)
 - reusable GORM hooks/extension API for create/update/delete pipelines
 - dashboard widgets with metric cards, quick actions, and list panels
-- runnable demo under `cmd/demo`
+- runnable demo under `examples/demo/` (module: `github.com/zhenyangze/go-admin-build/examples/demo`)
 - server-side form validation with inline error feedback for required fields and date ranges
 - architecture notes in [docs/architecture.md](/Users/zhenyangze/Documents/Company/git/go-admin-build/docs/architecture.md)
 - Dcat mapping notes in [docs/module-mapping.md](/Users/zhenyangze/Documents/Company/git/go-admin-build/docs/module-mapping.md)
@@ -48,10 +48,16 @@ Start the demo:
 ./scripts/run_demo.sh
 ```
 
+Or run directly:
+
+```bash
+go run ./examples/demo/cmd/demo
+```
+
 Use a fresh SQLite database if you want to validate newly added demo schema/seed data:
 
 ```bash
-DEMO_DB_PATH=tmp/demo/fresh-admin.db PORT=8091 DEMO_RESET=1 go run ./cmd/demo
+DEMO_DB_PATH=tmp/demo/fresh-admin.db PORT=8091 DEMO_RESET=1 go run ./examples/demo/cmd/demo
 ```
 
 Uploaded demo files are stored locally under `tmp/demo/uploads` and served back through `/admin/uploads/...`.
@@ -79,7 +85,13 @@ Open `http://127.0.0.1:8091/admin`
 
 ## Embedding in another Go app
 
-The framework itself is framework-agnostic because it exposes a standard `http.Handler`.
+The framework package is `github.com/zhenyangze/goadmin` (independent of the demo).
+
+```go
+import "github.com/zhenyangze/goadmin"
+```
+
+It exposes a standard `http.Handler` and can be mounted in any framework:
 
 ```go
 adminApp, _, err := demo.Build("tmp/demo/admin.db")
