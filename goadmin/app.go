@@ -452,6 +452,8 @@ func (a *App) handleTree(w http.ResponseWriter, r *http.Request, state *sessionS
 		a.writeError(w, http.StatusInternalServerError, err)
 		return
 	}
+	baseURL := joinURL(a.cfg.Prefix, resource.Path)
+	viewNodes := a.buildTreeNodeViews(nodes, baseURL)
 	a.renderShell(w, r, state, identity, "tree", pageData{
 		PageTitle:       fallback(builder.Title, resource.Title+" tree"),
 		PageDescription: fallback(builder.Description, resource.Description),
@@ -460,7 +462,7 @@ func (a *App) handleTree(w http.ResponseWriter, r *http.Request, state *sessionS
 			Title:       fallback(builder.Title, resource.Title+" tree"),
 			Description: fallback(builder.Description, resource.Description),
 			EmptyText:   builder.EmptyText,
-			Nodes:       nodes,
+			Nodes:       viewNodes,
 		},
 	})
 }
@@ -1099,7 +1101,16 @@ type treeView struct {
 	Title       string
 	Description string
 	EmptyText   string
-	Nodes       []TreeNode
+	Nodes       []treeNodeView
+}
+
+type treeNodeView struct {
+	ID          string
+	ParentID    string
+	Title       string
+	Description string
+	URL         string
+	Children    []treeNodeView
 }
 
 func (a *App) buildGridColumns(r *http.Request, baseURL string, builder *grid.Builder, query ListQuery) []gridColumnView {
@@ -1123,6 +1134,22 @@ func (a *App) buildGridColumns(r *http.Request, baseURL string, builder *grid.Bu
 		})
 	}
 	return columns
+}
+
+func (a *App) buildTreeNodeViews(nodes []TreeNode, baseURL string) []treeNodeView {
+	result := make([]treeNodeView, 0, len(nodes))
+	for _, node := range nodes {
+		viewNode := treeNodeView{
+			ID:          node.ID,
+			ParentID:    node.ParentID,
+			Title:       node.Title,
+			Description: node.Description,
+			URL:         joinURL(baseURL, node.ID),
+			Children:    a.buildTreeNodeViews(node.Children, baseURL),
+		}
+		result = append(result, viewNode)
+	}
+	return result
 }
 
 func (a *App) buildDashboardView(data DashboardData) dashboardView {
