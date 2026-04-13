@@ -142,17 +142,9 @@ body {
   @apply flex-1 flex flex-col min-h-screen overflow-hidden;
 }
 
-/* Top Bar */
+/* Top Bar - Sticky */
 .admin-topbar {
-  @apply flex items-center justify-between px-6 py-4 bg-white border-b border-[--color-slate-200];
-}
-
-.admin-page-title {
-  @apply text-2xl font-semibold text-[--color-slate-900] tracking-tight;
-}
-
-.admin-page-desc {
-  @apply mt-1 text-sm text-[--color-slate-500];
+  @apply sticky top-0 z-30 flex items-center justify-end px-6 py-3 bg-white/95 backdrop-blur-sm border-b border-[--color-slate-200];
 }
 
 .admin-topbar-right {
@@ -160,7 +152,7 @@ body {
 }
 
 .admin-user {
-  @apply flex items-center gap-2 px-4 py-2 rounded-full bg-[--color-slate-100] text-sm font-medium text-[--color-slate-700];
+  @apply flex items-center gap-2 px-3 py-1.5 rounded-full bg-[--color-slate-100] text-sm font-medium text-[--color-slate-700];
 }
 
 /* Content Container */
