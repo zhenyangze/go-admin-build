@@ -61,6 +61,33 @@ func New(cfg Config, authService AuthService) (*App, error) {
 				return template.HTML(template.HTMLEscapeString(fmt.Sprint(v)))
 			}
 		},
+		"substr": func(s string, start, length int) string {
+			if start < 0 || start >= len(s) {
+				return ""
+			}
+			end := start + length
+			if end > len(s) {
+				end = len(s)
+			}
+			return s[start:end]
+		},
+		"dict": func(values ...interface{}) (map[string]interface{}, error) {
+			if len(values)%2 != 0 {
+				return nil, errors.New("invalid dict call")
+			}
+			dict := make(map[string]interface{}, len(values)/2)
+			for i := 0; i < len(values); i += 2 {
+				key, ok := values[i].(string)
+				if !ok {
+					return nil, errors.New("dict keys must be strings")
+				}
+				dict[key] = values[i+1]
+			}
+			return dict, nil
+		},
+		"add": func(a, b int) int {
+			return a + b
+		},
 	}).ParseFS(assetFS, "assets/templates/*.tmpl")
 	if err != nil {
 		return nil, err
@@ -1657,12 +1684,23 @@ func (a *App) menuView(items []NavigationItem, currentPath string) []menuItemVie
 			}
 		}
 		children := a.menuView(item.Children, currentPath)
-		active := url != "" && (currentPath == url || strings.HasPrefix(currentPath, strings.TrimRight(url, "/")+"/"))
+		prefix := normalizePath(a.cfg.Prefix)
+		// Active if: exact URL match, or current path is a sub-path of this item (but not for root/dashboard)
+		active := false
+		if url != "" {
+			if currentPath == url {
+				active = true
+			} else if url != prefix {
+				// For non-root items, also match if current path is a child path
+				active = strings.HasPrefix(currentPath, strings.TrimRight(url, "/")+"/")
+			}
+		}
+		// Expanded if this item is active or any child is active/expanded
 		expanded := active
 		for _, child := range children {
 			if child.Active || child.Expanded {
 				expanded = true
-				active = active || child.Active
+				break
 			}
 		}
 		out = append(out, menuItemView{

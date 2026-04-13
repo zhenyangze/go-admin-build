@@ -1,17 +1,27 @@
 {{define "dashboard"}}
+<!-- Stats Cards -->
 <div class="card-grid">
   {{range .Cards}}
-  <article class="metric-card">
-    <div class="metric-title">{{.Title}}</div>
+  <div class="metric-card">
+    <div class="metric-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+        <line x1="3" y1="9" x2="21" y2="9"/>
+        <line x1="9" y1="21" x2="9" y2="9"/>
+      </svg>
+    </div>
     <div class="metric-value">{{.Value}}</div>
-    <div class="text-sm text-slate-500">{{.Hint}}</div>
-  </article>
+    <div class="metric-label">{{.Title}}</div>
+    {{if .Hint}}<div style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.5rem;">{{.Hint}}</div>{{end}}
+  </div>
   {{end}}
 </div>
+
 {{if .Panels}}
-<div class="grid gap-6 lg:grid-cols-2 mt-6">
+<!-- Dashboard Panels -->
+<div style="display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); margin-top: 1.5rem;">
   {{range .Panels}}
-  <section class="panel">
+  <div class="panel">
     <div class="panel-head">
       <div>
         <h2 class="panel-title">{{.Title}}</h2>
@@ -29,23 +39,23 @@
     </div>
     {{if .Items}}
     <div class="panel-body">
-      <div class="space-y-4">
+      <div style="display: flex; flex-direction: column;">
         {{range .Items}}
-        <div class="flex items-start justify-between gap-4 py-3 border-b border-slate-100 last:border-0 last:pb-0 first:pt-0">
-          <div class="flex-1 min-w-0">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 0.75rem 0; border-bottom: 1px solid var(--color-border);">
+          <div style="flex: 1; min-width: 0;">
             {{if .URL}}
-            <a href="{{.URL}}" class="text-sm font-medium text-slate-900 hover:text-primary-600 transition-colors">{{.Title}}</a>
+            <a href="{{.URL}}" style="font-size: 0.875rem; font-weight: 500; color: var(--color-text-primary); text-decoration: none;">{{.Title}}</a>
             {{else}}
-            <div class="text-sm font-medium text-slate-900">{{.Title}}</div>
+            <div style="font-size: 0.875rem; font-weight: 500; color: var(--color-text-primary);">{{.Title}}</div>
             {{end}}
-            {{if .Description}}<div class="text-sm text-slate-500 mt-0.5">{{.Description}}</div>{{end}}
+            {{if .Description}}<div style="font-size: 0.875rem; color: var(--color-text-secondary); margin-top: 0.125rem;">{{.Description}}</div>{{end}}
             {{if .Tags}}
-            <div class="flex flex-wrap gap-2 mt-2">
+            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem;">
               {{range .Tags}}<span class="badge badge-warning">{{.}}</span>{{end}}
             </div>
             {{end}}
           </div>
-          {{if .Value}}<div class="text-sm font-medium text-slate-700 shrink-0">{{.Value}}</div>{{end}}
+          {{if .Value}}<div style="font-size: 0.875rem; font-weight: 500; color: var(--color-text-secondary); flex-shrink: 0;">{{.Value}}</div>{{end}}
         </div>
         {{end}}
       </div>
@@ -57,7 +67,7 @@
       </div>
     </div>
     {{end}}
-  </section>
+  </div>
   {{end}}
 </div>
 {{end}}
