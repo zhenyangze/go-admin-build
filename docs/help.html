@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoAdmin 中文帮助手册</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f7fa;
+        }
+
+        /* 侧边栏导航 */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 280px;
+            height: 100vh;
+            background: #1a1a2e;
+            color: #fff;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .sidebar-header {
+            padding: 24px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .sidebar-header p {
+            font-size: 13px;
+            color: #8b9dc3;
+            margin-top: 4px;
+        }
+
+        .nav-section {
+            padding: 16px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .nav-section-title {
+            padding: 8px 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #8b9dc3;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-item {
+            display: block;
+            padding: 10px 20px 10px 32px;
+            color: #c5cae9;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+        }
+
+        .nav-item.active {
+            background: rgba(92, 107, 192, 0.2);
+            color: #7986cb;
+            border-left-color: #7986cb;
+        }
+
+        /* 主内容区 */
+        .main-content {
+            margin-left: 280px;
+            min-height: 100vh;
+            background: #fff;
+        }
+
+        .content-section {
+            padding: 48px 48px 64px;
+            max-width: 900px;
+        }
+
+        .content-section:not(:first-child) {
+            border-top: 1px solid #e8eaf6;
+        }
+
+        h2 {
+            font-size: 28px;
+            font-weight: 600;
+            color: #1a1a2e;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #5c6bc0;
+        }
+
+        h3 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin: 32px 0 16px;
+        }
+
+        h4 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #555;
+            margin: 24px 0 12px;
+        }
+
+        p {
+            margin-bottom: 16px;
+            color: #555;
+        }
+
+        /* 代码块 */
+        pre {
+            background: #1e1e2e;
+            color: #cdd6f4;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 16px 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        code {
+            font-family: "Fira Code", "Consolas", "Monaco", monospace;
+        }
+
+        .inline-code {
+            background: #f0f2f5;
+            color: #d73a49;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        /* 表格 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+        }
+
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border: 1px solid #e0e0e0;
+        }
+
+        th {
+            background: #f5f7fa;
+            font-weight: 600;
+            color: #333;
+        }
+
+        tr:nth-child(even) {
+            background: #fafbfc;
+        }
+
+        /* 提示框 */
+        .tip {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 16px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .tip-title {
+            font-weight: 600;
+            color: #1976d2;
+            margin-bottom: 8px;
+        }
+
+        .warning {
+            background: #fff3e0;
+            border-left-color: #ff9800;
+        }
+
+        .warning .tip-title {
+            color: #f57c00;
+        }
+
+        /* 列表 */
+        ul, ol {
+            margin: 16px 0;
+            padding-left: 24px;
+        }
+
+        li {
+            margin: 8px 0;
+            color: #555;
+        }
+
+        /* 方法卡片 */
+        .method-card {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 16px 0;
+        }
+
+        .method-name {
+            font-family: monospace;
+            font-size: 16px;
+            color: #5c6bc0;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .method-desc {
+            color: #666;
+            margin-bottom: 12px;
+        }
+
+        .method-params {
+            font-size: 13px;
+        }
+
+        .param-name {
+            color: #d73a49;
+            font-weight: 500;
+        }
+
+        .param-type {
+            color: #6f42c1;
+        }
+
+        /* 快速导航 */
+        .quick-nav {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin: 24px 0;
+        }
+
+        .quick-nav-item {
+            background: #5c6bc0;
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .quick-nav-item:hover {
+            background: #3f51b5;
+        }
+
+        /* 响应式 */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .content-section {
+                padding: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 侧边栏导航 -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h1>GoAdmin</h1>
+            <p>中文帮助手册</p>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">开始</div>
+            <a href="#overview" class="nav-item">框架概述</a>
+            <a href="#install" class="nav-item">安装与配置</a>
+            <a href="#quickstart" class="nav-item">快速开始</a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">核心模块</div>
+            <a href="#core" class="nav-item">核心概念</a>
+            <a href="#resource" class="nav-item">资源定义</a>
+            <a href="#repository" class="nav-item">数据仓库</a>
+            <a href="#auth" class="nav-item">认证授权</a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">页面构建器</div>
+            <a href="#grid" class="nav-item">Grid 列表页</a>
+            <a href="#form" class="nav-item">Form 表单页</a>
+            <a href="#show" class="nav-item">Show 详情页</a>
+            <a href="#tree" class="nav-item">Tree 树形页</a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">表单字段</div>
+            <a href="#fields-basic" class="nav-item">基础字段</a>
+            <a href="#fields-choice" class="nav-item">选择字段</a>
+            <a href="#fields-file" class="nav-item">文件上传</a>
+            <a href="#fields-advanced" class="nav-item">高级字段</a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">高级主题</div>
+            <a href="#theme" class="nav-item">主题定制</a>
+            <a href="#dashboard" class="nav-item">仪表盘</a>
+            <a href="#hooks" class="nav-item">生命周期钩子</a>
+            <a href="#deploy" class="nav-item">部署指南</a>
+        </div>
+    </nav>
+
+    <!-- 主内容 -->
+    <main class="main-content">
+        <!-- 框架概述 -->
+        <section class="content-section" id="overview">
+            <h2>框架概述</h2>
+            <p>GoAdmin 是一个受 Dcat Admin 启发的 Go 语言后台管理框架。它提供了资源导向的 DSL（领域特定语言），用于快速构建管理后台界面。</p>
+
+            <h3>核心特性</h3>
+            <ul>
+                <li><strong>资源导向设计</strong>：以资源为中心，自动构建 CRUD 界面</li>
+                <li><strong>纯 HTTP 标准</strong>：基于 <code class="inline-code">net/http</code>，可嵌入任何 Web 框架（Gin、Echo、Chi 等）</li>
+                <li><strong>丰富的字段类型</strong>：支持文本、选择、文件上传、富文本、关联等多种字段</li>
+                <li><strong>内置认证授权</strong>：完整的 RBAC 权限管理系统</li>
+                <li><strong>响应式 UI</strong>：基于 TailwindCSS 的现代化界面</li>
+                <li><strong>GORM 集成</strong>：内置 GORM 数据仓库，支持多种数据库</li>
+            </ul>
+
+            <h3>架构图</h3>
+            <pre>
+┌─────────────────────────────────────────────────────────────┐
+│                        你的应用层                            │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐   │
+│  │  Gin     │  │  Echo    │  │  Chi     │  │  stdlib  │   │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘   │
+│       └─────────────┴─────────────┴─────────────┘           │
+│                         │                                   │
+│                         ▼                                   │
+│                  ┌────────────┐                             │
+│                  │ goadmin.App│  ← HTTP Handler             │
+│                  └─────┬──────┘                             │
+└────────────────────────┼────────────────────────────────────┘
+                         │
+         ┌───────────────┼───────────────┐
+         ▼               ▼               ▼
+    ┌─────────┐    ┌─────────┐    ┌─────────┐
+    │  Grid   │    │  Form   │    │  Show   │
+    │  列表   │    │  表单   │    │  详情   │
+    └────┬────┘    └────┬────┘    └────┬────┘
+         │               │               │
+         └───────────────┼───────────────┘
+                         ▼
+                  ┌────────────┐
+                  │ Repository │
+                  │  数据仓库  │
+                  └─────┬──────┘
+                        │
+         ┌──────────────┼──────────────┐
+         ▼              ▼              ▼
+    ┌─────────┐   ┌─────────┐   ┌─────────┐
+    │  GORM   │   │  Memory │   │ Custom  │
+    │ MySQL   │   │  SQLite │   │  Impl   │
+    └─────────┘   └─────────┘   └─────────┘</pre>
+        </section>
+
+        <!-- 安装与配置 -->
+        <section class="content-section" id="install">
+            <h2>安装与配置</h2>
+
+            <h3>安装依赖</h3>
+            <pre>go get github.com/zhenyangze/goadmin</pre>
+
+            <h3>前端资源构建</h3>
+            <pre># 安装 Node.js 依赖
+npm install
+
+# 构建 CSS
+npm run build:css</pre>
+
+            <h3>基础目录结构</h3>
+            <pre>my-project/
+├── go.mod                    # Go 模块
+├── go.sum
+├── main.go                   # 应用入口
+├── models/                   # 数据模型
+│   └── user.go
+├── resources/                # 资源定义
+│   └── user_resource.go
+└── assets/                   # 静态资源（可选）
+    └── uploads/</pre>
+
+            <div class="tip">
+                <div class="tip-title">提示</div>
+                <p>CSS 构建是必需的，因为框架使用 TailwindCSS 生成样式。每次修改 <code class="inline-code">input.css</code> 后都需要重新运行 <code class="inline-code">npm run build:css</code>。</p>
+            </div>
+        </section>
+
+        <!-- 快速开始 -->
+        <section class="content-section" id="quickstart">
+            <h2>快速开始</h2>
+
+            <h3>1. 定义模型</h3>
+            <pre>package models
+
+import "gorm.io/gorm"
+
+type Article struct {
+    gorm.Model
+    Title   string `gorm:"size:200;not null"`
+    Content string `gorm:"type:text"`
+    Status  int    `gorm:"default:1"`
+}</pre>
+
+            <h3>2. 创建资源</h3>
+            <pre>package resources
+
+import (
+    "github.com/zhenyangze/goadmin"
+    "github.com/zhenyangze/goadmin/form"
+    "github.com/zhenyangze/goadmin/grid"
+    "myapp/models"
+)
+
+func ArticleResource() goadmin.Resource {
+    repo := gormstore.NewRepository[models.Article](db, "articles")
+
+    return goadmin.Resource{
+        Name:       "文章管理",
+        Path:       "articles",
+        Repository: repo,
+        Grid: grid.New(func(g *grid.Builder) {
+            g.Column("id", "ID")
+            g.Column("title", "标题")
+            g.Column("status", "状态")
+            g.RowActions(
+                grid.ActionEdit(),
+                grid.ActionDelete(),
+            )
+        }),
+        Form: form.New(func(f *form.Builder) {
+            f.Text("title", "标题").Required()
+            f.Textarea("content", "内容")
+            f.Select("status", "状态").
+                Options(map[string]string{
+                    "1": "启用",
+                    "0": "禁用",
+                })
+        }),
+    }
+}</pre>
+
+            <h3>3. 启动应用</h3>
+            <pre>package main
+
+import (
+    "log"
+    "net/http"
+
+    "github.com/zhenyangze/goadmin"
+    "myapp/resources"
+)
+
+func main() {
+    app := goadmin.New(goadmin.Config{
+        Title:         "我的博客后台",
+        SessionSecret: "your-secret-key",
+    })
+
+    // 注册资源
+    app.Register(resources.ArticleResource())
+
+    // 启动服务
+    log.Println("服务启动: http://localhost:8080/admin")
+    log.Fatal(http.ListenAndServe(":8080", app.Handler()))
+}</pre>
+        </section>
+
+        <!-- 核心概念 -->
+        <section class="content-section" id="core">
+            <h2>核心概念</h2>
+
+            <h3>Resource（资源）</h3>
+            <p>Resource 是 GoAdmin 的核心抽象，代表一个可管理的业务实体。每个资源对应数据库中的一张表，框架会自动为其生成列表、创建、编辑、删除等页面。</p>
+
+            <h3>Builder（构建器）</h3>
+            <p>GoAdmin 使用构建器模式来配置页面：</p>
+            <ul>
+                <li><code class="inline-code">Grid.Builder</code> - 配置列表页</li>
+                <li><code class="inline-code">Form.Builder</code> - 配置表单页</li>
+                <li><code class="inline-code">Show.Builder</code> - 配置详情页</li>
+                <li><code class="inline-code">Tree.Builder</code> - 配置树形页</li>
+            </ul>
+
+            <h3>Repository（数据仓库）</h3>
+            <p>Repository 接口抽象了数据访问层，框架内置了 GORM 实现，你也可以自定义实现。</p>
+        </section>
+
+        <!-- 资源定义 -->
+        <section class="content-section" id="resource">
+            <h2>资源定义</h2>
+
+            <h3>Resource 结构</h3>
+            <table>
+                <tr>
+                    <th>字段</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>Name</td>
+                    <td>string</td>
+                    <td>资源显示名称，用于菜单和页面标题</td>
+                </tr>
+                <tr>
+                    <td>Path</td>
+                    <td>string</td>
+                    <td>URL 路径，如 "articles"</td>
+                </tr>
+                <tr>
+                    <td>Repository</td>
+                    <td>Repository</td>
+                    <td>数据仓库接口实现</td>
+                </tr>
+                <tr>
+                    <td>Grid</td>
+                    <td>GridBuilder</td>
+                    <td>列表页配置（可选）</td>
+                </tr>
+                <tr>
+                    <td>Form</td>
+                    <td>FormBuilder</td>
+                    <td>表单页配置（可选）</td>
+                </tr>
+                <tr>
+                    <td>Show</td>
+                    <td>ShowBuilder</td>
+                    <td>详情页配置（可选）</td>
+                </tr>
+                <tr>
+                    <td>Tree</td>
+                    <td>TreeBuilder</td>
+                    <td>树形页配置（可选）</td>
+                </tr>
+            </table>
+
+            <h3>完整示例</h3>
+            <pre>goadmin.Resource{
+    Name:       "文章管理",
+    Path:       "articles",
+    Icon:       "file-text",  // 菜单图标
+
+    // 数据层
+    Repository: articleRepo,
+
+    // 列表页
+    Grid: grid.New(func(g *grid.Builder) {
+        g.Column("id", "ID")
+        g.Column("title", "标题").Searchable()
+        g.Column("category.name", "分类")
+        g.Column("created_at", "创建时间").Sortable()
+
+        g.Filter("status", "状态").Select(...)
+        g.SearchableFields("title", "content")
+
+        g.PageActions(grid.ActionCreate())
+        g.RowActions(
+            grid.ActionView(),
+            grid.ActionEdit(),
+            grid.ActionDelete(),
+        )
+    }),
+
+    // 表单页
+    Form: form.New(func(f *form.Builder) {
+        f.Text("title", "标题").Required().Rules("min:3,max:100")
+        f.Select("category_id", "分类").FromResource("categories")
+        f.Editor("content", "内容")
+        f.Switch("status", "状态").Default(true)
+    }),
+
+    // 详情页
+    Show: show.New(func(s *show.Builder) {
+        s.Field("id", "ID")
+        s.Field("title", "标题")
+        s.Field("content", "内容").AsHtml()
+        s.Field("created_at", "创建时间")
+    }),
+}</pre>
+        </section>
+
+        <!-- Grid 列表页 -->
+        <section class="content-section" id="grid">
+            <h2>Grid 列表页</h2>
+            <p>Grid 用于配置数据列表展示，支持列定义、筛选、搜索、排序、分页等功能。</p>
+
+            <h3>基础列定义</h3>
+            <pre>g.Grid: grid.New(func(g *grid.Builder) {
+    // 简单列
+    g.Column("id", "ID")
+    g.Column("title", "文章标题")
+
+    // 可排序列
+    g.Column("created_at", "创建时间").Sortable()
+
+    // 可搜索列
+    g.Column("title", "标题").Searchable()
+
+    // 关联列（自动解析嵌套字段）
+    g.Column("category.name", "分类名称")
+    g.Column("author.email", "作者邮箱")
+}),</pre>
+
+            <h3>列方法</h3>
+            <div class="method-card">
+                <div class="method-name">Column(name, label string) *ColumnBuilder</div>
+                <div class="method-desc">定义数据列</div>
+                <div class="method-params">
+                    <span class="param-name">name</span>: 字段名（支持点号嵌套，如 "user.name"）<br>
+                    <span class="param-name">label</span>: 显示标题
+                </div>
+            </div>
+
+            <div class="method-card">
+                <div class="method-name">Sortable()</div>
+                <div class="method-desc">启用列排序功能</div>
+            </div>
+
+            <div class="method-card">
+                <div class="method-name">Searchable()</div>
+                <div class="method-desc">启用列搜索功能</div>
+            </div>
+
+            <h3>筛选器</h3>
+            <pre>g.Filter("status", "状态").Select(map[string]string{
+    "1": "启用",
+    "0": "禁用",
+})
+
+g.Filter("created_at", "创建时间").DateRange()</pre>
+
+            <h3>操作按钮</h3>
+            <pre>// 页面级操作（顶部）
+g.PageActions(
+    grid.ActionCreate().Label("新建文章"),
+    grid.ActionExport(),
+)
+
+// 行级操作
+// 默认提供：查看、编辑、删除
+g.RowActions(
+    grid.ActionView().Label("查看详情"),
+    grid.ActionEdit(),
+    grid.ActionDelete().Confirm("确定删除吗？"),
+
+    // 自定义操作
+    grid.Action{
+        Label: "审核",
+        Style: "success",
+        URL:   "/admin/articles/{id}/approve",
+    },
+)</pre>
+
+            <h3>分页配置</h3>
+            <pre>g.Paginate(20)  // 每页 20 条（默认 15）</pre>
+        </section>
+
+        <!-- Form 表单页 -->
+        <section class="content-section" id="form">
+            <h2>Form 表单页</h2>
+            <p>Form 用于配置创建和编辑页面，提供丰富的表单字段类型和验证规则。</p>
+
+            <h3>基础字段</h3>
+
+            <h4>文本字段</h4>
+            <pre>f.Text("name", "名称").
+    Required().
+    Rules("min:2,max:50").
+    Placeholder("请输入名称").
+    Help("2-50 个字符")
+
+f.Textarea("description", "描述").Rows(4)
+
+f.Password("password", "密码")</pre>
+
+            <h4>选择字段</h4>
+            <pre>// 下拉选择
+f.Select("status", "状态").
+    Options(map[string]string{
+        "active":   "启用",
+        "inactive": "禁用",
+        "pending":  "待审核",
+    }).
+    Default("active")
+
+// 多选
+f.MultiSelect("tags", "标签").
+    Options(tagOptions)
+
+// 开关
+f.Switch("is_featured", "推荐").Default(false)</pre>
+
+            <h4>日期时间</h4>
+            <pre>// 日期
+f.Date("start_date", "开始日期")
+
+// 日期时间
+f.DateTime("publish_at", "发布时间")
+
+// 日期范围（两个字段）
+f.DateRange("start", "end", "有效期")</pre>
+
+            <h4>文件上传</h4>
+            <pre>// 单图上传
+f.Image("cover", "封面图").
+    Dir("uploads/images").
+    MaxSize(2 * 1024 * 1024).  // 2MB
+    AllowedExt("jpg", "png", "gif")
+
+// 多图上传
+f.Gallery("images", "图集").
+    Dir("uploads/gallery")
+
+// 文件
+f.File("attachment", "附件")</pre>
+        </section>
+
+        <!-- 表单字段 - 高级 -->
+        <section class="content-section" id="fields-advanced">
+            <h2>高级表单字段</h2>
+
+            <h3>关联字段</h3>
+            <pre>//  belongsTo 关联
+f.Select("category_id", "分类").
+    FromResource("categories")  // 从分类资源加载选项
+
+// 多对多关联
+f.MultiSelect("tags", "标签").
+    FromResource("tags")</pre>
+
+            <h3>富文本编辑器</h3>
+            <pre>f.Editor("content", "内容").
+    Height(400)</pre>
+
+            <h3>标签输入</h3>
+            <pre>f.Tags("keywords", "关键词")
+
+// 带建议
+tagField := f.Tags("labels", "标签")
+tagField.Suggestions = []string{"重要", "紧急", "日常"}</pre>
+
+            <h3>Repeater（重复子表单）</h3>
+            <p>用于管理一对多关联数据，如文章的 FAQ、产品的规格参数等。</p>
+            <pre>f.Repeater("faqs", "常见问题").
+    Fields(
+        form.Text("question", "问题").Required(),
+        form.Textarea("answer", "回答").Required(),
+    )
+
+// 使用自定义仓库处理
+repo := gormstore.NewRepeaterRepository(db, "articles", "faqs")</pre>
+
+            <h3>分组显示</h3>
+            <pre>f.Tab("基本信息", func(t *form.TabBuilder) {
+    t.Text("title", "标题")
+    t.Select("category", "分类")
+})
+
+f.Tab("高级设置", func(t *form.TabBuilder) {
+    t.Switch("is_vip", "VIP 专属")
+    t.Number("sort", "排序权重")
+})</pre>
+
+            <h3>验证规则</h3>
+            <table>
+                <tr>
+                    <th>规则</th>
+                    <th>说明</th>
+                    <th>示例</th>
+                </tr>
+                <tr>
+                    <td>required</td>
+                    <td>必填</td>
+                    <td><code>Required()</code></td>
+                </tr>
+                <tr>
+                    <td>min/max</td>
+                    <td>长度限制</td>
+                    <td><code>Rules("min:3,max:100")</code></td>
+                </tr>
+                <tr>
+                    <td>email</td>
+                    <td>邮箱格式</td>
+                    <td><code>Rules("email")</code></td>
+                </tr>
+                <tr>
+                    <td>numeric</td>
+                    <td>纯数字</td>
+                    <td><code>Rules("numeric")</code></td>
+                </tr>
+                <tr>
+                    <td>url</td>
+                    <td>URL 格式</td>
+                    <td><code>Rules("url")</code></td>
+                </tr>
+            </table>
+        </section>
+
+        <!-- Show 详情页 -->
+        <section class="content-section" id="show">
+            <h2>Show 详情页</h2>
+            <p>Show 用于展示单条记录的详细信息。</p>
+
+            <h3>基础用法</h3>
+            <pre>s.Show: show.New(func(s *show.Builder) {
+    s.Field("id", "ID")
+    s.Field("title", "标题")
+    s.Field("content", "内容").AsHtml()  // HTML 渲染
+    s.Field("created_at", "创建时间")
+}),</pre>
+
+            <h3>字段方法</h3>
+            <div class="method-card">
+                <div class="method-name">AsHtml()</div>
+                <div class="method-desc">字段值作为 HTML 渲染（不进行转义）</div>
+            </div>
+
+            <div class="method-card">
+                <div class="method-name">AsImage()</div>
+                <div class="method-desc">将值显示为图片</div>
+            </div>
+
+            <div class="method-card">
+                <div class="method-name">AsLink()</div>
+                <div class="method-desc">显示为可点击链接</div>
+            </div>
+
+            <div class="method-card">
+                <div class="method-name">Badge(style string)</div>
+                <div class="method-desc">显示为徽章标签</div>
+                <div class="method-params">
+                    style: "success" | "warning" | "danger" | "info"
+                </div>
+            </div>
+        </section>
+
+        <!-- Tree 树形页 -->
+        <section class="content-section" id="tree">
+            <h2>Tree 树形页</h2>
+            <p>Tree 用于展示和编辑层级结构数据，如分类、菜单、部门等。</p>
+
+            <h3>数据模型</h3>
+            <pre>type Category struct {
+    gorm.Model
+    ParentID *uint      // 父节点 ID，根节点为 null
+    Name     string
+    Sort     int        // 排序权重
+}</pre>
+
+            <h3>Tree 配置</h3>
+            <pre>s.Tree: tree.New(func(t *tree.Builder) {
+    t.TitleField("name")        // 显示字段
+    t.SortField("sort")         // 排序字段
+
+    // 节点操作
+    t.CanCreate()               // 允许创建子节点
+    t.CanEdit()                 // 允许编辑
+    t.CanDelete()               // 允许删除
+    t.CanReorder()              // 允许拖拽排序
+}),</pre>
+
+            <h3>自定义节点显示</h3>
+            <pre>t.Node(func(n *tree.Node, item *Category) {
+    n.Title = item.Name
+    n.Description = fmt.Sprintf("文章数: %d", item.ArticleCount)
+    n.Icon = "folder"
+})</pre>
+        </section>
+
+        <!-- 认证授权 -->
+        <section class="content-section" id="auth">
+            <h2>认证授权</h2>
+            <p>GoAdmin 内置完整的 RBAC（基于角色的访问控制）系统。</p>
+
+            <h3>默认用户模型</h3>
+            <pre>// 框架自动提供以下表
+// - admin_users      管理员用户
+// - admin_roles      角色
+// - admin_permissions 权限
+// - admin_role_permissions 角色权限关联
+// - admin_user_roles  用户角色关联</pre>
+
+            <h3>配置认证</h3>
+            <pre>authService := auth.NewService(db)
+
+app := goadmin.New(goadmin.Config{
+    AuthService: authService,
+})
+
+// 自定义导航（可选）
+authService.SetNavigationFunc(func(ctx context.Context, identity *goadmin.Identity) []goadmin.NavigationItem {
+    return []goadmin.NavigationItem{
+        {Title: "仪表盘", Icon: "home", URI: "/admin"},
+        {Title: "文章管理", Icon: "file-text", URI: "/admin/articles"},
+        {Title: "系统设置", Icon: "settings", Children: []goadmin.NavigationItem{
+            {Title: "用户管理", URI: "/admin/users"},
+            {Title: "角色权限", URI: "/admin/roles"},
+        }},
+    }
+})</pre>
+
+            <h3>资源权限控制</h3>
+            <pre>// 在资源中设置权限
+res := goadmin.Resource{
+    Name: "文章管理",
+    Path: "articles",
+
+    // 查看权限标识
+    ViewPermission: "article.read",
+
+    // 创建权限标识
+    CreatePermission: "article.create",
+
+    // 编辑权限标识
+    EditPermission: "article.update",
+
+    // 删除权限标识
+    DeletePermission: "article.delete",
+}</pre>
+
+            <h3>菜单权限</h3>
+            <pre>// 只为特定角色显示菜单项
+navItem := goadmin.NavigationItem{
+    Title: "财务报表",
+    URI:   "/admin/reports",
+    Role:  []string{"finance", "admin"},  // 仅财务和管理员可见
+}</pre>
+        </section>
+
+        <!-- 仪表盘 -->
+        <section class="content-section" id="dashboard">
+            <h2>仪表盘</h2>
+            <p>自定义后台首页，展示关键指标和快捷入口。</p>
+
+            <h3>基础配置</h3>
+            <pre>app.SetDashboard(func(ctx context.Context) (goadmin.DashboardData, error) {
+    return goadmin.DashboardData{
+        Title:       "欢迎回来",
+        Description: "这是您的管理后台概览",
+
+        // 统计卡片
+        Cards: []goadmin.DashboardCard{
+            {
+                Title: "今日访问",
+                Value: "1,234",
+                Hint:  "较昨日 +12%",
+            },
+            {
+                Title: "待处理订单",
+                Value: "56",
+                Hint:  "需要尽快处理",
+            },
+        },
+
+        // 内容面板
+        Panels: []goadmin.DashboardPanel{
+            {
+                Title:       "最新文章",
+                Description: "最近发布的 5 篇文章",
+                Items: []goadmin.DashboardPanelItem{
+                    {
+                        Title: "GoAdmin 快速入门",
+                        URL:   "/admin/articles/1",
+                        Tags:  []string{"教程", "热门"},
+                    },
+                },
+                Actions: []goadmin.DashboardAction{
+                    {Label: "查看全部", URL: "/admin/articles"},
+                    {Label: "写文章", URL: "/admin/articles/create", Style: "primary"},
+                },
+            },
+        },
+    }, nil
+})</pre>
+        </section>
+
+        <!-- 生命周期钩子 -->
+        <section class="content-section" id="hooks">
+            <h2>生命周期钩子</h2>
+            <p>在数据操作的各个阶段执行自定义逻辑。</p>
+
+            <h3>Repository 钩子</h3>
+            <pre>repo := gormstore.NewRepository[Article](db, "articles")
+
+// 创建前
+repo.BeforeCreate(func(ctx context.Context, values goadmin.Values) error {
+    // 自动设置作者
+    values["author_id"] = []string{fmt.Sprint(GetCurrentUserID(ctx))}
+    return nil
+})
+
+// 创建后
+repo.AfterCreate(func(ctx context.Context, id string, model *Article) error {
+    // 发送通知
+    notification.Send("新文章发布: " + model.Title)
+    return nil
+})
+
+// 更新前
+repo.BeforeUpdate(func(ctx context.Context, id string, values goadmin.Values) error {
+    // 记录修改日志
+    audit.Log("article", id, "update", values)
+    return nil
+})
+
+// 删除前（软删除检查）
+repo.BeforeDelete(func(ctx context.Context, id string) error {
+    // 检查是否有关联数据
+    if hasRelatedData(id) {
+        return errors.New("该文章有关联数据，无法删除")
+    }
+    return nil
+})</pre>
+        </section>
+
+        <!-- 主题定制 -->
+        <section class="content-section" id="theme">
+            <h2>主题定制</h2>
+
+            <h3>CSS 变量</h3>
+            <p>通过修改 <code class="inline-code">input.css</code> 中的变量来自定义主题色：</p>
+            <pre>@theme {
+  // 主色调
+  --color-primary: #3C50E0;
+  --color-primary-light: #5475e5;
+  --color-primary-dark: #2d3eb3;
+
+  // 背景色
+  --color-bg-page: #F1F5F9;
+  --color-bg-card: #FFFFFF;
+  --color-bg-sidebar: #1C2434;
+
+  // 深色模式
+  --color-bg-dark-page: #1A222C;
+  --color-bg-dark-card: #24303F;
+}</pre>
+
+            <h3>自定义模板</h3>
+            <pre>// 替换默认模板
+app.SetTemplate("layout", myCustomLayout)
+app.SetTemplate("login", myCustomLogin)</pre>
+        </section>
+
+        <!-- 部署指南 -->
+        <section class="content-section" id="deploy">
+            <h2>部署指南</h2>
+
+            <h3>生产环境配置</h3>
+            <pre>app := goadmin.New(goadmin.Config{
+    Title:         "管理后台",
+    SessionSecret: os.Getenv("SESSION_SECRET"),  // 从环境变量读取
+
+    // 生产环境设置
+    Debug: false,
+
+    // 上传配置
+    UploadDir: "/var/www/uploads",
+
+    // 自定义错误页面
+    ErrorHandler: func(err error, w http.ResponseWriter, r *http.Request) {
+        // 记录错误日志
+        log.Printf("Error: %v", err)
+        http.Error(w, "Internal Server Error", 500)
+    },
+})</pre>
+
+            <h3>Docker 部署</h3>
+            <pre># Dockerfile
+FROM golang:1.21-alpine AS builder
+WORKDIR /app
+COPY . .
+RUN go build -o admin main.go
+
+FROM alpine:latest
+RUN apk --no-cache add ca-certificates
+WORKDIR /root/
+COPY --from=builder /app/admin .
+COPY --from=builder /app/goadmin/assets ./assets
+EXPOSE 8080
+CMD ["./admin"]</pre>
+
+            <div class="tip warning">
+                <div class="tip-title">安全提醒</div>
+                <ul>
+                    <li>生产环境务必使用强 SESSION_SECRET</li>
+                    <li>启用 HTTPS，配置安全的 Cookie</li>
+                    <li>限制上传文件大小和类型</li>
+                    <li>定期更新依赖包</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- 快速导航 -->
+        <section class="content-section" id="nav-bottom">
+            <h2>文档导航</h2>
+            <div class="quick-nav">
+                <a href="#overview" class="quick-nav-item">框架概述</a>
+                <a href="#install" class="quick-nav-item">安装配置</a>
+                <a href="#quickstart" class="quick-nav-item">快速开始</a>
+                <a href="#grid" class="quick-nav-item">列表页</a>
+                <a href="#form" class="quick-nav-item">表单页</a>
+                <a href="#auth" class="quick-nav-item">认证授权</a>
+                <a href="#deploy" class="quick-nav-item">部署指南</a>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // 平滑滚动
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // 高亮当前导航
+        const sections = document.querySelectorAll('.content-section');
+        const navItems = document.querySelectorAll('.nav-item');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (scrollY >= sectionTop - 100) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navItems.forEach(item => {
+                item.classList.remove('active');
+                if (item.getAttribute('href') === '#' + current) {
+                    item.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
