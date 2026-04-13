@@ -21,6 +21,7 @@ import (
 	"github.com/zhenyangze/goadmin/grid"
 	"github.com/zhenyangze/goadmin/show"
 	"github.com/zhenyangze/goadmin/tree"
+	widgetform "github.com/zhenyangze/goadmin/widgets/form"
 )
 
 //go:embed assets/templates/*.tmpl assets/styles/admin.css
@@ -40,6 +41,7 @@ type App struct {
 	resources      []Resource
 	css            []byte
 	uploadForm     *http.ServeMux
+	toolForms      map[string]*widgetform.ToolForm
 }
 
 // New creates a new admin application.
@@ -103,6 +105,7 @@ func New(cfg Config, authService AuthService) (*App, error) {
 		routes:         map[string]Route{},
 		resourceMap:    map[string]Resource{},
 		css:            css,
+		toolForms:      map[string]*widgetform.ToolForm{},
 	}, nil
 }
 
@@ -128,6 +131,25 @@ func (a *App) RegisterDashboardPage(page DashboardPage) {
 func (a *App) RegisterRoute(route Route) {
 	route.Path = strings.Trim(route.Path, "/")
 	a.routes[route.Path] = route
+}
+
+// RegisterToolForm registers a tool form under the admin prefix.
+// The form can be accessed at /{prefix}/form/{path}.
+func (a *App) RegisterToolForm(path string, form *widgetform.ToolForm) {
+	path = strings.Trim(path, "/")
+	// Ensure path doesn't conflict with resources
+	if _, ok := a.resourceMap[path]; ok {
+		panic(fmt.Sprintf("tool form path %q conflicts with registered resource", path))
+	}
+	// Ensure path doesn't conflict with dashboard pages
+	if _, ok := a.dashboardPages[path]; ok {
+		panic(fmt.Sprintf("tool form path %q conflicts with dashboard page", path))
+	}
+	// Ensure path doesn't conflict with routes
+	if _, ok := a.routes[path]; ok {
+		panic(fmt.Sprintf("tool form path %q conflicts with registered route", path))
+	}
+	a.toolForms[path] = form
 }
 
 // Handler returns the reusable HTTP handler.
@@ -217,6 +239,12 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Handle tool forms
+	if form, ok := a.toolForms[path]; ok {
+		a.handleToolForm(w, r, state, identity, form)
+		return
+	}
+
 	parts := strings.Split(path, "/")
 	resource, ok := a.resourceMap[parts[0]]
 	if !ok {
@@ -275,6 +303,15 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		if parts[2] == "delete" && method == http.MethodPost {
 			a.handleDelete(w, r, state, identity, resource, parts[1])
+			return
+		}
+		if parts[2] == "batch-delete" && method == http.MethodPost {
+			a.handleBatchDelete(w, r, state, identity, resource)
+			return
+		}
+		// Handle custom batch actions
+		if strings.HasPrefix(parts[2], "batch-action") && method == http.MethodPost {
+			a.handleCustomBatchAction(w, r, state, identity, resource, parts[2])
 			return
 		}
 	}
@@ -386,20 +423,44 @@ func (a *App) handleGrid(w http.ResponseWriter, r *http.Request, state *sessionS
 	}
 
 	baseURL := joinURL(a.cfg.Prefix, resource.Path)
+	colSpan := len(builder.Columns) + 1 // +1 for Actions column
+	if !builder.DisableRowSelector {
+		colSpan++ // +1 for checkbox column
+	}
 	view := gridView{
-		Title:         fallback(builder.Title, resource.Title),
-		Description:   fallback(builder.Description, resource.Description),
-		Actions:       a.buildGridPageActions(baseURL, builder, resource),
-		Columns:       a.buildGridColumns(r, baseURL, builder, query),
-		Rows:          a.buildGridRows(baseURL, builder, result.Items),
-		Filters:       a.buildGridFilters(builder, query),
-		QuickSearch:   query.Search,
-		CurrentPath:   baseURL,
-		Pagination:    buildPagination(baseURL, query, result.Total, result.Page, result.PerPage),
-		ResultSummary: fmt.Sprintf("Total %d records", result.Total),
-		EmptyText:     fallback(resource.EmptyText, "No records yet."),
-		ColSpan:       len(builder.Columns) + 1,
-		CSRF:          state.CSRF,
+		Title:              fallback(builder.Title, resource.Title),
+		Description:        fallback(builder.Description, resource.Description),
+		Actions:            a.buildGridPageActions(baseURL, builder, resource),
+		BatchActions:       a.buildGridBatchActions(baseURL, builder),
+		Tools:              a.buildGridTools(builder),
+		Columns:            a.buildGridColumns(r, baseURL, builder, query),
+		Rows:               a.buildGridRows(baseURL, builder, result.Items),
+		Filters:            a.buildGridFilters(builder, query),
+		QuickSearch:        query.Search,
+		CurrentPath:        baseURL,
+		Pagination:         buildPagination(baseURL, query, result.Total, result.Page, result.PerPage),
+		ResultSummary:      fmt.Sprintf("Total %d records", result.Total),
+		EmptyText:          fallback(resource.EmptyText, "No records yet."),
+		ColSpan:            colSpan,
+		CSRF:               state.CSRF,
+		// New features
+		DisableRowSelector: builder.DisableRowSelector,
+		RowSelector: gridRowSelectorView{
+			Enabled:     !builder.DisableRowSelector,
+			TitleColumn: builder.RowSelectorTitleColumn,
+			IDColumn:    builder.RowSelectorIDColumn,
+			Click:       builder.RowSelectorClick,
+		},
+		EnableDialogCreate: builder.EnableDialogCreate,
+		EnableDialogEdit:   builder.EnableDialogEdit,
+		DialogWidth:        fallback(builder.DialogWidth, "700px"),
+		DialogHeight:       fallback(builder.DialogHeight, "670px"),
+		ScrollbarX:         builder.ScrollbarX,
+		TableClasses:       builder.TableClasses,
+		PerPageOptions:     builder.PerPageOptions,
+		CurrentPerPage:     query.PerPage,
+		ToolsWithOutline:   builder.ToolsWithOutline,
+		DisableRefresh:     builder.DisableRefresh,
 	}
 
 	a.renderShell(w, r, state, identity, "grid", pageData{
@@ -594,6 +655,142 @@ func (a *App) handleDelete(w http.ResponseWriter, r *http.Request, state *sessio
 	}
 	a.cleanupDeletedUploads(r.Context(), existing, uploadFields)
 	http.Redirect(w, r, joinURL(a.cfg.Prefix, resource.Path)+"?flash=deleted", http.StatusFound)
+}
+
+func (a *App) handleBatchDelete(w http.ResponseWriter, r *http.Request, state *sessionState, _ *Identity, resource Resource) {
+	if err := r.ParseForm(); err != nil {
+		a.writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	if r.FormValue("_csrf") != state.CSRF {
+		a.writeError(w, http.StatusBadRequest, errors.New("invalid csrf token"))
+		return
+	}
+	ids := r.FormValue("_ids")
+	if ids == "" {
+		http.Redirect(w, r, joinURL(a.cfg.Prefix, resource.Path), http.StatusFound)
+		return
+	}
+	idList := strings.Split(ids, ",")
+	for _, id := range idList {
+		id = strings.TrimSpace(id)
+		if id == "" {
+			continue
+		}
+		var existing any
+		var uploadFields []*form.Field
+		if uploadFields = a.uploadFields(resource); len(uploadFields) > 0 {
+			record, err := resource.Repository.Get(r.Context(), id)
+			if err == nil {
+				existing = record
+			}
+		}
+		if err := resource.Repository.Delete(r.Context(), id); err != nil {
+			a.writeError(w, http.StatusBadRequest, err)
+			return
+		}
+		a.cleanupDeletedUploads(r.Context(), existing, uploadFields)
+	}
+	http.Redirect(w, r, joinURL(a.cfg.Prefix, resource.Path)+"?flash=batch-deleted", http.StatusFound)
+}
+
+func (a *App) handleCustomBatchAction(w http.ResponseWriter, r *http.Request, state *sessionState, _ *Identity, resource Resource, actionPath string) {
+	if err := r.ParseForm(); err != nil {
+		a.writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	if r.FormValue("_csrf") != state.CSRF {
+		a.writeError(w, http.StatusBadRequest, errors.New("invalid csrf token"))
+		return
+	}
+
+	// Extract action name from path (e.g., "batch-action:Export" -> "Export")
+	parts := strings.SplitN(actionPath, ":", 2)
+	actionName := ""
+	if len(parts) == 2 {
+		actionName = parts[1]
+	} else {
+		// Try URL-decoded version
+		actionName = strings.TrimPrefix(actionPath, "batch-action")
+		actionName = strings.TrimPrefix(actionName, "/")
+		actionName, _ = url.QueryUnescape(actionName)
+	}
+
+	ids := r.FormValue("_ids")
+	if ids == "" {
+		if r.Header.Get("X-Requested-With") == "XMLHttpRequest" {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]any{
+				"success": false,
+				"message": "No items selected",
+			})
+			return
+		}
+		http.Redirect(w, r, joinURL(a.cfg.Prefix, resource.Path), http.StatusFound)
+		return
+	}
+
+	idList := strings.Split(ids, ",")
+	filteredIDs := make([]string, 0, len(idList))
+	for _, id := range idList {
+		id = strings.TrimSpace(id)
+		if id != "" {
+			filteredIDs = append(filteredIDs, id)
+		}
+	}
+
+	// Find the handler from the builder
+	builder := grid.New()
+	if resource.BuildGrid != nil {
+		resource.BuildGrid(builder)
+	}
+
+	var handler grid.BatchHandler
+	for _, action := range builder.BatchActionHandlers {
+		if action != nil && action.Label == actionName {
+			handler = action.Handler
+			break
+		}
+	}
+
+	if handler == nil {
+		if r.Header.Get("X-Requested-With") == "XMLHttpRequest" {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]any{
+				"success": false,
+				"message": "Action not found: " + actionName,
+			})
+			return
+		}
+		http.NotFound(w, r)
+		return
+	}
+
+	// Execute the handler
+	err := handler(r.Context(), filteredIDs)
+	if err != nil {
+		if r.Header.Get("X-Requested-With") == "XMLHttpRequest" {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]any{
+				"success": false,
+				"message": err.Error(),
+			})
+			return
+		}
+		a.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	// Return AJAX response or redirect
+	if r.Header.Get("X-Requested-With") == "XMLHttpRequest" {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]any{
+			"success": true,
+			"message": "Operation completed successfully",
+		})
+		return
+	}
+	http.Redirect(w, r, joinURL(a.cfg.Prefix, resource.Path)+"?flash=batch-action-completed", http.StatusFound)
 }
 
 func (a *App) formValues(resource Resource) func(*http.Request) (Values, error) {
@@ -875,6 +1072,7 @@ func (a *App) renderShell(w http.ResponseWriter, r *http.Request, state *session
 		CurrentPath:     normalizePath(r.URL.Path),
 		Prefix:          normalizePath(a.cfg.Prefix),
 		Flash:           r.URL.Query().Get("flash"),
+		FlashMessages:   r.URL.Query().Get("flash-messages"),
 		Theme:           a.cfg.Theme,
 		User:            identity,
 		Menu:            a.menuView(navigation, normalizePath(r.URL.Path)),
@@ -894,6 +1092,21 @@ func (a *App) renderPartial(name string, data any) template.HTML {
 		return template.HTML(template.HTMLEscapeString(err.Error()))
 	}
 	return template.HTML(buf.String())
+}
+
+// FlashRedirect redirects with a flash message.
+func (a *App) FlashRedirect(w http.ResponseWriter, r *http.Request, redirectURL string, flashType, message string) {
+	http.Redirect(w, r, redirectURL+"?flash="+url.QueryEscape(message), http.StatusFound)
+}
+
+// FlashSuccess redirects with a success flash message.
+func (a *App) FlashSuccess(w http.ResponseWriter, r *http.Request, url, message string) {
+	a.FlashRedirect(w, r, url, "success", message)
+}
+
+// FlashError redirects with an error flash message.
+func (a *App) FlashError(w http.ResponseWriter, r *http.Request, url, message string) {
+	a.FlashRedirect(w, r, url, "error", message)
 }
 
 func (a *App) writeError(w http.ResponseWriter, code int, err error) {
@@ -950,6 +1163,7 @@ type layoutData struct {
 	CurrentPath     string
 	Prefix          string
 	Flash           string
+	FlashMessages   string
 	Theme           any
 	User            *Identity
 	Menu            []menuItemView
@@ -1002,19 +1216,46 @@ type helperPanelView struct {
 }
 
 type gridView struct {
-	Title         string
-	Description   string
-	QuickSearch   string
-	Filters       []gridFilterView
-	Columns       []gridColumnView
-	Rows          []gridRowView
-	Actions       []gridActionView
-	Pagination    []paginationLink
-	CurrentPath   string
-	ResultSummary string
-	EmptyText     string
-	ColSpan       int
-	CSRF          string
+	Title              string
+	Description        string
+	QuickSearch        string
+	Filters            []gridFilterView
+	Columns            []gridColumnView
+	Rows               []gridRowView
+	Actions            []gridActionView
+	BatchActions       []gridActionView
+	Tools              []gridToolView
+	Pagination         []paginationLink
+	CurrentPath        string
+	ResultSummary      string
+	EmptyText          string
+	ColSpan            int
+	CSRF               string
+	// New features
+	DisableRowSelector bool
+	RowSelector        gridRowSelectorView
+	EnableDialogCreate bool
+	EnableDialogEdit   bool
+	DialogWidth        string
+	DialogHeight       string
+	ScrollbarX         bool
+	TableClasses       []string
+	PerPageOptions     []int
+	CurrentPerPage     int
+	ToolsWithOutline   bool
+	DisableRefresh     bool
+}
+
+type gridToolView struct {
+	HTML   template.HTML
+	Script string
+}
+
+type gridRowSelectorView struct {
+	Enabled    bool
+	TitleColumn string
+	IDColumn   string
+	Click      bool
 }
 
 type gridFilterView struct {
@@ -1039,8 +1280,11 @@ type gridColumnView struct {
 }
 
 type gridRowView struct {
-	Cells   []template.HTML
-	Actions []gridActionView
+	ID       string
+	Cells    []template.HTML
+	Actions  []gridActionView
+	Checked  bool
+	Disabled bool
 }
 
 type gridActionView struct {
@@ -1303,6 +1547,14 @@ func (a *App) buildGridRows(baseURL string, builder *grid.Builder, items []any) 
 			row.Cells = append(row.Cells, toHTML(formatValue(value)))
 		}
 		id := formatValue(valueFromPath(item, "ID"))
+		row.ID = id
+		// Set row selector state
+		if builder.RowSelectorChecked != nil {
+			row.Checked = builder.RowSelectorChecked(item)
+		}
+		if builder.RowSelectorDisabled != nil {
+			row.Disabled = builder.RowSelectorDisabled(item)
+		}
 		if !builder.DisableView {
 			row.Actions = append(row.Actions, gridActionView{
 				Label:  "View",
@@ -1380,6 +1632,60 @@ func (a *App) buildGridPageActions(baseURL string, builder *grid.Builder, resour
 		})
 	}
 	return actions
+}
+
+func (a *App) buildGridBatchActions(baseURL string, builder *grid.Builder) []gridActionView {
+	actions := make([]gridActionView, 0, len(builder.BatchActions)+1)
+	// Add default batch delete if not disabled
+	if !builder.DisableBatchDelete {
+		actions = append(actions, gridActionView{
+			Label:   "Delete",
+			URL:     joinURL(baseURL, "batch-delete"),
+			Method:  http.MethodPost,
+			Class:   gridActionClass(grid.ActionDanger),
+			Confirm: "Are you sure you want to delete selected records?",
+		})
+	}
+	for _, action := range builder.BatchActions {
+		if action == nil {
+			continue
+		}
+		actions = append(actions, gridActionView{
+			Label:   action.Label,
+			URL:     action.URL,
+			Method:  action.Method,
+			Confirm: action.Confirm,
+			Class:   gridActionClass(action.Style),
+		})
+	}
+	// Add AJAX batch action handlers
+	for _, action := range builder.BatchActionHandlers {
+		if action == nil {
+			continue
+		}
+		actions = append(actions, gridActionView{
+			Label:   action.Label,
+			URL:     joinURL(baseURL, "batch-action", url.QueryEscape(action.Label)),
+			Method:  action.Method,
+			Confirm: action.Confirm,
+			Class:   gridActionClass(action.Style),
+		})
+	}
+	return actions
+}
+
+func (a *App) buildGridTools(builder *grid.Builder) []gridToolView {
+	tools := make([]gridToolView, 0, len(builder.Tools))
+	for _, tool := range builder.Tools {
+		if tool == nil {
+			continue
+		}
+		tools = append(tools, gridToolView{
+			HTML:   tool.Render(),
+			Script: tool.Script(),
+		})
+	}
+	return tools
 }
 
 func gridActionClass(style grid.ActionStyle) string {
@@ -1961,4 +2267,87 @@ func routeAllows(route Route, method string) bool {
 		}
 	}
 	return false
+}
+
+func (a *App) handleToolForm(w http.ResponseWriter, r *http.Request, state *sessionState, identity *Identity, formWidget *widgetform.ToolForm) {
+	ctx := r.Context()
+
+	switch r.Method {
+	case http.MethodGet:
+		// Render form
+		renderCtx := formWidget.Render(state.CSRF, a.cfg.Prefix)
+		data := map[string]interface{}{
+			"Form": renderCtx,
+		}
+		// Check if async request
+		if r.Header.Get("X-Requested-With") == "XMLHttpRequest" {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			if err := a.templates.ExecuteTemplate(w, "toolform", data); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
+			return
+		}
+		// Render within shell
+		a.renderShell(w, r, state, identity, "form", pageData{
+			PageTitle: formWidget.Builder().Title,
+			Content: toolFormContent{
+				Form:  data,
+				Title: formWidget.Builder().Title,
+			},
+		})
+
+	case http.MethodPost:
+		// Process form submission
+		if err := r.ParseForm(); err != nil {
+			a.writeError(w, http.StatusBadRequest, err)
+			return
+		}
+		if r.FormValue("_csrf") != state.CSRF {
+			a.writeError(w, http.StatusBadRequest, errors.New("invalid csrf token"))
+			return
+		}
+
+		resp, err := formWidget.Process(ctx, r.PostForm)
+		if err != nil {
+			a.writeError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		// Check if AJAX request
+		if r.Header.Get("X-Requested-With") == "XMLHttpRequest" {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(resp)
+			return
+		}
+
+		// HTML response - render form with message
+		renderCtx := formWidget.Render(state.CSRF, a.cfg.Prefix)
+		data := map[string]interface{}{
+			"Form":    renderCtx,
+			"Message": resp.Message,
+			"Success": resp.Success,
+		}
+
+		a.renderShell(w, r, state, identity, "form", pageData{
+			PageTitle: formWidget.Builder().Title,
+			Message:   resp.Message,
+			Content: toolFormContent{
+				Form:    data,
+				Title:   formWidget.Builder().Title,
+				Success: resp.Success,
+				Message: resp.Message,
+			},
+		})
+
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+// toolFormContent is the view data for tool form rendering.
+type toolFormContent struct {
+	Form    map[string]interface{}
+	Title   string
+	Success bool
+	Message string
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -20,6 +21,7 @@ import (
 	"github.com/zhenyangze/goadmin/show"
 	"github.com/zhenyangze/goadmin/store/gormstore"
 	"github.com/zhenyangze/goadmin/tree"
+	widgetform "github.com/zhenyangze/goadmin/widgets/form"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -336,6 +338,31 @@ func buildWithDB(db *gorm.DB, uploadDir string) (*goadmin.App, error) {
 	registerAuditLogs(app, db)
 	registerTickets(app, db)
 	registerReports(app, db)
+
+	// Register a Tool Form example - Settings form
+	settingsForm := widgetform.New().
+		Title("系统设置").
+		Description("配置系统基本参数").
+		Text("site_name", "网站名称").
+		Text("site_description", "网站描述").
+		Email("admin_email", "管理员邮箱").
+		Switch("maintenance_mode", "维护模式").
+		Select("timezone", "时区",
+			form.Option{Value: "Asia/Shanghai", Label: "北京时间"},
+			form.Option{Value: "Asia/Tokyo", Label: "东京时间"},
+			form.Option{Value: "America/New_York", Label: "纽约时间"},
+		).
+		Number("items_per_page", "每页条目数").
+		DefaultValue("items_per_page", "20").
+		DefaultValue("timezone", "Asia/Shanghai").
+		Handle(func(ctx context.Context, values url.Values) error {
+			// Process form data
+			fmt.Printf("Settings updated: %+v\n", values)
+			return nil
+		}).
+		Success("设置已保存", "alert('设置保存成功！');")
+
+	app.RegisterToolForm("settings", settingsForm)
 
 	return app, nil
 }
