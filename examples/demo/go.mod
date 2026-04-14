@@ -4,7 +4,7 @@ go 1.26.1
 
 require (
 	github.com/gin-gonic/gin v1.12.0
-	github.com/zhenyangze/goadmin v0.0.0
+	github.com/zhenyangze/goadmin v0.1.0
 	gorm.io/driver/sqlite v1.6.0
 	gorm.io/gorm v1.31.1
 )
