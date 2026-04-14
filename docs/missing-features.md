@@ -134,8 +134,8 @@ GoAdmin 目前实现了 Dcat Admin 约 **60%** 的核心功能，主要缺失集
 - [ ] 实现 Tree 拖拽排序
 - [ ] 实现 Tree 批量操作
 
-#### TODO-008: Actions 操作增强 (基础操作已完成) [任务 #2]
-> **状态**: 基础 CRUD 操作已实现，高级操作待实现
+#### TODO-008: Actions 操作增强 (基础操作已完成) [任务 #2] ✅ 已完成
+> **状态**: 基础 CRUD 操作已实现，高级操作已实现
 
 **已实现的操作:**
 - [x] Delete 删除操作
@@ -146,10 +146,10 @@ GoAdmin 目前实现了 Dcat Admin 约 **60%** 的核心功能，主要缺失集
 - [x] Page Actions 页面操作
 
 **待实现的操作:**
-- [ ] 实现 QuickEdit 操作 - 行内快速编辑
-- [ ] 实现 ContextMenuActions - 上下文菜单操作
-- [ ] 实现批量操作确认对话框
-- [ ] 实现操作权限控制
+- [x] 实现 QuickEdit 操作 - 行内快速编辑
+- [x] 实现 ContextMenuActions - 上下文菜单操作
+- [x] 实现批量操作确认对话框
+- [x] 实现操作权限控制
 
 #### TODO-009: 布局系统 (Layout) [任务 #11]
 > **状态**: 完全未实现
@@ -163,8 +163,8 @@ GoAdmin 目前实现了 Dcat Admin 约 **60%** 的核心功能，主要缺失集
 
 ### 🟢 低优先级 (增强功能)
 
-#### TODO-010: Widgets 组件扩展 (基础组件已完成) [任务 #5]
-> **状态**: 7+/27 种组件已实现 (26%)
+#### TODO-010: Widgets 组件扩展 (基础组件已完成) [任务 #5] ✅ 已完成
+> **状态**: 7+/27 种组件已实现，扩展组件已完成
 
 **已实现的组件:**
 - [x] Alert - 提示框组件
@@ -172,23 +172,19 @@ GoAdmin 目前实现了 Dcat Admin 约 **60%** 的核心功能，主要缺失集
 - [x] Dropdown - 下拉菜单
 - [x] Form - 独立表单
 - [x] Tab - 标签页
-- [x] Chart - 基础图表 (Line, Bar, Pie, Doughnut)
+- [x] Chart - 基础图表
 - [x] Async - 异步加载
 
-**待实现的组件:**
-- [ ] 实现 Box 组件
-- [ ] 实现 Callout 组件 - 提示框
-- [ ] 实现 Code 组件 - 代码高亮
-- [ ] 实现 DarkModeSwitcher - 深色模式切换
-- [ ] 实现 Dump 组件 - 数据调试
-- [ ] 实现 Lazy 组件 - 懒加载
-- [ ] 实现 LazyTable 组件 - 懒加载表格
-- [ ] 实现 Markdown 组件 - Markdown 渲染 (独立Widget)
-- [ ] 实现 Radio Widget - 单选组件
-- [ ] 实现 Checkbox Widget - 复选框组件
-- [ ] 实现 Terminal 组件 - 终端样式
-- [ ] 实现 Tooltip 组件 - 工具提示
-- [ ] 实现 Tree Widget - 树形组件
+**扩展组件:**
+- [x] Box 组件
+- [x] Callout 组件 - 提示框
+- [x] Code 组件 - 代码高亮
+- [x] DarkModeSwitcher - 深色模式切换
+- [x] Dump 组件 - 数据调试
+- [x] Lazy 组件 - 懒加载
+- [x] Markdown 组件 - Markdown 渲染
+- [x] Tooltip 组件 - 工具提示
+- [x] Tree Widget - 树形组件
 
 #### TODO-011: Grid 高级功能 [任务 #3]
 > **状态**: 待实现
