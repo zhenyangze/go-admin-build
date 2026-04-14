@@ -21,6 +21,10 @@ import (
 	"github.com/zhenyangze/goadmin/show"
 	"github.com/zhenyangze/goadmin/store/gormstore"
 	"github.com/zhenyangze/goadmin/tree"
+	"github.com/zhenyangze/goadmin/widgets/alert"
+	"github.com/zhenyangze/goadmin/widgets/chart"
+	"github.com/zhenyangze/goadmin/widgets/dropdown"
+	"github.com/zhenyangze/goadmin/widgets/tab"
 	widgetform "github.com/zhenyangze/goadmin/widgets/form"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -364,6 +368,9 @@ func buildWithDB(db *gorm.DB, uploadDir string) (*goadmin.App, error) {
 
 	app.RegisterToolForm("settings", settingsForm)
 
+	// Register Widgets Demo Page
+	registerWidgetsDemo(app)
+
 	return app, nil
 }
 
@@ -376,6 +383,131 @@ func migrate(db *gorm.DB) error {
 
 func seed(db *gorm.DB) error {
 	return demoseed.Run(db)
+}
+
+// registerWidgetsDemo registers a dashboard page showcasing all widget components
+func registerWidgetsDemo(app *goadmin.App) {
+	app.RegisterDashboardPage(goadmin.DashboardPage{
+		Path:        "widgets-demo",
+		Title:       "组件演示",
+		Description: "展示 GoAdmin 提供的各种页面组件（Widgets）",
+		Build: func(ctx context.Context, r *http.Request, identity *goadmin.Identity) (goadmin.DashboardData, error) {
+			// Create sample charts
+			_ = chart.Line().
+				Title("访问量趋势").
+				Subtitle("近6个月数据").
+				Labels("1月", "2月", "3月", "4月", "5月", "6月").
+				Dataset("2024", []float64{120, 190, 300, 500, 200, 320}).
+				Dataset("2023", []float64{100, 150, 250, 400, 180, 280}).
+				SmoothLine().
+				Height("250px").
+				Render()
+
+			_ = chart.Bar().
+				Title("产品销量").
+				Labels("产品A", "产品B", "产品C", "产品D", "产品E").
+				Dataset("销量", []float64{150, 230, 180, 320, 290}).
+				Height("200px").
+				Render()
+
+			_ = chart.Pie().
+				Title("用户分布").
+				Labels("北京", "上海", "广州", "深圳", "其他").
+				Dataset("用户", []float64{30, 25, 20, 15, 10}).
+				Colors("#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF").
+				Height("200px").
+				Render()
+
+			// Create tabs
+			tabsBuilder := tab.New()
+			tabsBuilder.Add("图表展示", template.HTML(`<div style="padding: 1rem;"><p>图表组件支持折线图、柱状图、饼图、雷达图等多种类型，基于 Chart.js 实现。</p></div>`))
+			tabsBuilder.Add("表单组件", template.HTML(`<div style="padding: 1rem;"><p>表单组件支持文本、选择、日期、文件上传等 30+ 种字段类型。</p></div>`))
+			tabsBuilder.Add("表格组件", template.HTML(`<div style="padding: 1rem;"><p>表格组件支持排序、筛选、分页、批量操作等功能。</p></div>`))
+			_ = tabsBuilder.Render()
+
+			// Create dropdown
+			ddBuilder := dropdown.New("操作").Class("btn-primary")
+			ddBuilder.Button("查看详情", "#")
+			ddBuilder.Button("编辑", "#")
+			ddBuilder.Divider()
+			ddBuilder.Link("导出Excel", "#")
+			ddBuilder.Link("导出PDF", "#")
+			ddBuilder.Divider()
+			deleteItem := ddBuilder.Link("删除", "#")
+			deleteItem.WithConfirm("确定要删除吗？").Danger()
+			_ = ddBuilder.Render()
+
+			// Create alerts
+			_ = alert.Success("操作已成功完成！").Title("成功").Dismissible(true).Render()
+			_ = alert.Info("这是一条提示信息，用于向用户展示一般性说明。").Dismissible(true).Render()
+			_ = alert.Warning("请注意：此操作将影响多个关联数据。").Dismissible(true).Render()
+
+			return goadmin.DashboardData{
+				Title:       "组件演示中心",
+				Description: "体验 GoAdmin 提供的丰富组件库",
+				Panels: []goadmin.DashboardPanel{
+					{
+						Title:       "图表组件 Chart",
+						Description: "支持多种图表类型，数据可视化",
+						Items: []goadmin.DashboardPanelItem{
+							{Title: "折线图", Description: "Line Chart - 展示趋势变化", Value: "支持多系列、平滑曲线"},
+							{Title: "柱状图", Description: "Bar Chart - 展示分类对比", Value: "支持水平/垂直方向"},
+							{Title: "饼图", Description: "Pie Chart - 展示占比分布", Value: "支持环形图、玫瑰图"},
+						},
+					},
+					{
+						Title:       "选项卡组件 Tab",
+						Description: "组织内容到多个选项卡面板",
+						Items: []goadmin.DashboardPanelItem{
+							{Title: "横向选项卡", Description: "Horizontal Tabs - 顶部导航", Value: "适合内容分类展示"},
+							{Title: "纵向选项卡", Description: "Vertical Tabs - 侧边导航", Value: "适合多步骤流程"},
+						},
+					},
+					{
+						Title:       "下拉菜单 Dropdown",
+						Description: "操作按钮下拉菜单",
+						Items: []goadmin.DashboardPanelItem{
+							{Title: "基础下拉", Description: "支持图标、分割线", Value: "确认对话框"},
+							{Title: "右键菜单", Description: "支持自定义触发方式", Value: "多级菜单"},
+						},
+					},
+					{
+						Title:       "警告提示 Alert",
+						Description: "内联警告和 Toast 通知",
+						Items: []goadmin.DashboardPanelItem{
+							{Title: "内联警告", Description: "Inline Alert - 页面内显示", Value: "支持四种类型"},
+							{Title: "Toast 通知", Description: "Toast Notification - 浮动提示", Value: "自动消失"},
+						},
+					},
+					{
+						Title:       "异步加载 Async",
+						Description: "动态加载内容",
+						Items: []goadmin.DashboardPanelItem{
+							{Title: "异步卡片", Description: "Card with async content", Value: "支持加载状态"},
+							{Title: "自动刷新", Description: "Auto-refresh", Value: "定时更新数据"},
+						},
+					},
+				},
+			}, nil
+		},
+	})
+
+	// Register widget demo API endpoint
+	app.RegisterRoute(goadmin.Route{
+		Path:    "widgets-demo/data",
+		Methods: []string{"GET"},
+		Handler: func(w http.ResponseWriter, r *http.Request, identity *goadmin.Identity) error {
+			data := map[string]interface{}{
+				"timestamp": time.Now().Format("2006-01-02 15:04:05"),
+				"charts": map[string]interface{}{
+					"visits": []int{120, 190, 300, 500, 200, 320},
+					"sales":  []int{80, 120, 180, 250, 150, 220},
+				},
+			}
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			return json.NewEncoder(w).Encode(data)
+		},
+	})
 }
 
 func registerUsers(app *goadmin.App, db *gorm.DB) {
@@ -625,8 +757,10 @@ func registerArticles(app *goadmin.App, db *gorm.DB) {
 				grid.Option{Value: "draft", Label: "Draft"},
 				grid.Option{Value: "published", Label: "Published"},
 			)
+			// Page Actions with dropdown-style grouping
 			b.PageAction("Published", "/admin/articles?f_Status=published").WithStyle(grid.ActionGhost)
 			b.PageAction("Related Tickets", "/admin/tickets").WithStyle(grid.ActionGhost)
+			// Row Actions
 			b.RowAction("Category", func(record any) string {
 				article, ok := record.(models.Article)
 				if !ok || article.CategoryID == 0 {
@@ -634,6 +768,10 @@ func registerArticles(app *goadmin.App, db *gorm.DB) {
 				}
 				return fmt.Sprintf("/admin/categories/%d", article.CategoryID)
 			})
+			// Use tools with outline style
+			b.UseToolsWithOutline()
+			// Custom tool - refresh button is shown by default, but we can add custom tools
+			// b.HideRefresh() // Uncomment to hide default refresh button
 		},
 		BuildForm: func(b *form.Builder) {
 			b.Display("ID", "ID")

@@ -327,6 +327,18 @@
         </div>
 
         <div class="nav-section">
+            <div class="nav-section-title">页面组件</div>
+            <a href="#widgets" class="nav-item">组件概述</a>
+            <a href="#widget-chart" class="nav-item">图表 Chart</a>
+            <a href="#widget-tab" class="nav-item">选项卡 Tab</a>
+            <a href="#widget-dropdown" class="nav-item">下拉菜单 Dropdown</a>
+            <a href="#widget-alert" class="nav-item">警告提示 Alert</a>
+            <a href="#widget-async" class="nav-item">异步加载 Async</a>
+            <a href="#widget-card" class="nav-item">卡片 Card</a>
+            <a href="#grid-toolbar" class="nav-item">Grid 工具栏</a>
+        </div>
+
+        <div class="nav-section">
             <div class="nav-section-title">高级主题</div>
             <a href="#theme" class="nav-item">主题定制</a>
             <a href="#dashboard" class="nav-item">仪表盘</a>
@@ -1076,6 +1088,463 @@ app.SetTemplate("layout", myCustomLayout)
 app.SetTemplate("login", myCustomLogin)</pre>
         </section>
 
+        <!-- 页面组件 -->
+        <section class="content-section" id="widgets">
+            <h2>页面组件</h2>
+            <p>GoAdmin 提供了丰富的页面组件（Widgets），用于构建复杂的管理后台界面。这些组件支持链式调用，使用方式简洁直观。</p>
+
+            <h3>组件列表</h3>
+            <table>
+                <tr>
+                    <th>组件</th>
+                    <th>说明</th>
+                    <th>路径</th>
+                </tr>
+                <tr>
+                    <td>Chart</td>
+                    <td>图表组件，支持多种图表类型</td>
+                    <td><code class="inline-code">github.com/zhenyangze/goadmin/widgets/chart</code></td>
+                </tr>
+                <tr>
+                    <td>Tab</td>
+                    <td>选项卡组件，支持横向/纵向布局</td>
+                    <td><code class="inline-code">github.com/zhenyangze/goadmin/widgets/tab</code></td>
+                </tr>
+                <tr>
+                    <td>Dropdown</td>
+                    <td>下拉菜单组件</td>
+                    <td><code class="inline-code">github.com/zhenyangze/goadmin/widgets/dropdown</code></td>
+                </tr>
+                <tr>
+                    <td>Alert</td>
+                    <td>警告框和 Toast 通知</td>
+                    <td><code class="inline-code">github.com/zhenyangze/goadmin/widgets/alert</code></td>
+                </tr>
+                <tr>
+                    <td>Async</td>
+                    <td>异步加载组件</td>
+                    <td><code class="inline-code">github.com/zhenyangze/goadmin/widgets/async</code></td>
+                </tr>
+                <tr>
+                    <td>Card</td>
+                    <td>卡片容器组件</td>
+                    <td><code class="inline-code">github.com/zhenyangze/goadmin/widgets/card</code></td>
+                </tr>
+            </table>
+        </section>
+
+        <!-- 图表组件 -->
+        <section class="content-section" id="widget-chart">
+            <h2>图表组件 Chart</h2>
+            <p>基于 Chart.js 的图表组件，支持折线图、柱状图、饼图等多种类型。</p>
+
+            <h3>支持的图表类型</h3>
+            <ul>
+                <li><strong>Line</strong> - 折线图</li>
+                <li><strong>Bar</strong> - 柱状图</li>
+                <li><strong>Pie</strong> - 饼图</li>
+                <li><strong>Doughnut</strong> - 环形图</li>
+                <li><strong>Radar</strong> - 雷达图</li>
+                <li><strong>Area</strong> - 面积图</li>
+            </ul>
+
+            <h3>基本用法</h3>
+            <pre>import "github.com/zhenyangze/goadmin/widgets/chart"
+
+// 折线图
+lineChart := chart.Line().
+    Title("销售额趋势").
+    Subtitle("2024年度").
+    Labels("1月", "2月", "3月", "4月", "5月").
+    Dataset("2024", []float64{120, 190, 300, 500, 200}).
+    Dataset("2023", []float64{100, 150, 250, 400, 180}).
+    SmoothLine().  // 平滑曲线
+    Render()
+
+// 柱状图
+barChart := chart.Bar().
+    Title("产品销量").
+    Labels("产品A", "产品B", "产品C").
+    Dataset("销量", []float64{150, 230, 180}).
+    Render()
+
+// 饼图
+pieChart := chart.Pie().
+    Title("用户分布").
+    Labels("北京", "上海", "广州", "深圳").
+    Dataset("用户", []float64{30, 25, 20, 25}).
+    Colors("#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0").
+    Render()</pre>
+
+            <h3>常用方法</h3>
+            <div class="method-card">
+                <div class="method-name">Title(title string)</div>
+                <div class="method-desc">设置图表标题</div>
+            </div>
+            <div class="method-card">
+                <div class="method-name">Labels(labels ...string)</div>
+                <div class="method-desc">设置X轴标签或分类标签</div>
+            </div>
+            <div class="method-card">
+                <div class="method-name">Dataset(label string, data []float64)</div>
+                <div class="method-desc">添加数据系列</div>
+            </div>
+            <div class="method-card">
+                <div class="method-name">SmoothLine()</div>
+                <div class="method-desc">折线图使用平滑曲线</div>
+            </div>
+            <div class="method-card">
+                <div class="method-name">FillArea()</div>
+                <div class="method-desc">启用面积填充（仅折线图）</div>
+            </div>
+            <div class="method-card">
+                <div class="method-name">Colors(colors ...string)</div>
+                <div class="method-desc">设置颜色（支持饼图/环形图）</div>
+            </div>
+            <div class="method-card">
+                <div class="method-name">Height(height string)</div>
+                <div class="method-desc">设置图表高度，如 "300px"</div>
+            </div>
+        </section>
+
+        <!-- 选项卡组件 -->
+        <section class="content-section" id="widget-tab">
+            <h2>选项卡组件 Tab</h2>
+            <p>用于组织内容到多个选项卡面板中，支持横向和纵向布局。</p>
+
+            <h3>基本用法</h3>
+            <pre>import "github.com/zhenyangze/goadmin/widgets/tab"
+import "html/template"
+
+// 创建横向选项卡
+tabs := tab.New().
+    Add("基本信息", template.HTML(`
+        &lt;div&gt;
+            &lt;p&gt;用户基本信息内容...&lt;/p&gt;
+        &lt;/div&gt;
+    `)).
+    Add("高级设置", template.HTML(`
+        &lt;div&gt;
+            &lt;p&gt;高级配置选项...&lt;/p&gt;
+        &lt;/div&gt;
+    `)).
+    Add("安全日志", template.HTML(`
+        &lt;div&gt;
+            &lt;p&gt;安全日志记录...&lt;/p&gt;
+        &lt;/div&gt;
+    `)).
+    Render()
+
+// 创建纵向选项卡（堆叠模式）
+stackedTabs := tab.New().
+    Stacked(true).
+    Add("菜单1", content1).
+    Add("菜单2", content2).
+    Render()</pre>
+
+            <h3>Tab 方法</h3>
+            <div class="method-card">
+                <div class="method-name">Add(title string, content template.HTML) *Tab</div>
+                <div class="method-desc">添加选项卡页面</div>
+            </div>
+            <div class="method-card">
+                <div class="method-name">Stacked(stacked bool)</div>
+                <div class="method-desc">启用纵向堆叠布局（左侧导航）</div>
+            </div>
+
+            <h3>Tab 页面方法</h3>
+            <div class="method-card">
+                <div class="method-name">WithIcon(icon string)</div>
+                <div class="method-desc">设置选项卡图标（HTML字符串）</div>
+            </div>
+            <div class="method-card">
+                <div class="method-name">WithBadge(badge string)</div>
+                <div class="method-desc">设置选项卡徽标文字</div>
+            </div>
+        </section>
+
+        <!-- 下拉菜单组件 -->
+        <section class="content-section" id="widget-dropdown">
+            <h2>下拉菜单组件 Dropdown</h2>
+            <p>用于创建操作下拉菜单，支持分组、图标和确认对话框。</p>
+
+            <h3>基本用法</h3>
+            <pre>import "github.com/zhenyangze/goadmin/widgets/dropdown"
+import "html/template"
+
+dd := dropdown.New("操作").
+    Class("btn-primary").
+    Button("查看", "/view/1").
+    Button("编辑", "/edit/1").
+    Divider().
+    Link("删除", "/delete/1").
+        WithConfirm("确定要删除吗？").
+        Danger().
+    Render()</pre>
+
+            <h3>带图标的下拉菜单</h3>
+            <pre>dd := dropdown.New("导出").
+    Button("Excel", "/export/excel").
+        WithIcon(template.HTML(`&lt;svg&gt;...&lt;/svg&gt;`)).
+    Button("PDF", "/export/pdf").
+        WithIcon(template.HTML(`&lt;svg&gt;...&lt;/svg&gt;`)).
+    Divider().
+    Link("打印", "/print").
+    Render()</pre>
+
+            <h3>常用方法</h3>
+            <div class="method-card">
+                <div class="method-name">Button(label, url string) *Item</div>
+                <div class="method-desc">添加菜单项</div>
+            </div>
+            <div class="method-card">
+                <div class="method-name">Divider()</div>
+                <div class="method-desc">添加分隔线</div>
+            </div>
+            <div class="method-card">
+                <div class="method-name">WithIcon(icon template.HTML)</div>
+                <div class="method-desc">设置菜单项图标</div>
+            </div>
+            <div class="method-card">
+                <div class="method-name">WithConfirm(message string)</div>
+                <div class="method-desc">添加确认对话框</div>
+            </div>
+            <div class="method-card">
+                <div class="method-name">Danger()</div>
+                <div class="method-desc">设置为危险样式（红色文字）</div>
+            </div>
+        </section>
+
+        <!-- 警告提示组件 -->
+        <section class="content-section" id="widget-alert">
+            <h2>警告提示组件 Alert</h2>
+            <p>提供内联警告框和浮动 Toast 通知两种形式。</p>
+
+            <h3>内联警告框</h3>
+            <pre>import "github.com/zhenyangze/goadmin/widgets/alert"
+
+// 不同类型的警告框
+successAlert := alert.Success("操作成功完成").Render()
+errorAlert := alert.Error("操作失败，请重试").Render()
+warningAlert := alert.Warning("请注意检查配置").Render()
+infoAlert := alert.Info("这是一条提示信息").Render()
+
+// 带标题和关闭按钮
+alertBox := alert.Success("数据已保存").
+    Title("保存成功").
+    Dismissible(true).
+    Render()</pre>
+
+            <h3>Toast 通知</h3>
+            <pre>// 创建 Toast 通知（自动显示在右上角）
+toast := alert.SuccessToast("保存成功！").
+    Title("操作完成").
+    Render()
+
+// Flash 消息（用于页面跳转后显示）
+flash := alert.NewFlashContainer().
+    Success("用户创建成功").
+    Error("部分数据验证失败").
+    Warning("请注意审核新用户").
+    Info("新功能已上线")
+
+// 获取 JSON 格式（用于 AJAX 响应）
+jsonData := flash.JSON()
+
+// 获取 HTML 格式（用于模板渲染）
+htmlData := flash.HTML()</pre>
+
+            <h3>在 App 中使用 Flash 消息</h3>
+            <pre>// 在 Handler 中使用
+func (a *App) handleCreate(w http.ResponseWriter, r *http.Request) {
+    // ... 处理逻辑 ...
+
+    // 成功时跳转并显示消息
+    a.FlashSuccess(w, r, "/admin/users", "用户创建成功")
+
+    // 错误时跳转并显示消息
+    a.FlashError(w, r, "/admin/users/new", "创建失败：邮箱已存在")
+}</pre>
+        </section>
+
+        <!-- 异步加载组件 -->
+        <section class="content-section" id="widget-async">
+            <h2>异步加载组件 Async</h2>
+            <p>用于异步加载内容，支持自动刷新和加载状态显示。</p>
+
+            <h3>基本用法</h3>
+            <pre>import "github.com/zhenyangze/goadmin/widgets/async"
+
+// 简单的异步加载
+asyncComp := async.New("/api/stats").Render()
+
+// 带自动刷新的异步加载（每30秒刷新）
+autoRefresh := async.New("/api/realtime-data").
+    Interval(30).
+    Render()
+
+// 自定义加载内容
+loadingContent := template.HTML(`
+    &lt;div class="loading-custom"&gt;
+        &lt;div class="spinner"&gt;&lt;/div&gt;
+        &lt;span&gt;加载数据中...&lt;/span&gt;
+    &lt;/div&gt;
+`)
+asyncComp := async.New("/api/data").
+    Loading(loadingContent).
+    Render()</pre>
+
+            <h3>异步卡片</h3>
+            <pre>// 创建可异步加载内容的卡片
+asyncCard := async.NewCard("/api/dashboard-stats").
+    Title("实时数据").
+    Subtitle("每30秒自动刷新").
+    Collapsible(true).
+    RenderCard()</pre>
+        </section>
+
+        <!-- 卡片组件 -->
+        <section class="content-section" id="widget-card">
+            <h2>卡片组件 Card</h2>
+            <p>通用的内容容器组件，支持标题、工具栏、折叠和删除功能。</p>
+
+            <h3>基本用法</h3>
+            <pre>import "github.com/zhenyangze/goadmin/widgets/card"
+import "html/template"
+
+c := card.New().
+    Title("卡片标题").
+    Subtitle("卡片副标题描述").
+    Content(template.HTML(`
+        &lt;p&gt;卡片内容...&lt;/p&gt;
+    `)).
+    Render()</pre>
+
+            <h3>高级用法</h3>
+            <pre>// 可折叠、可删除的卡片
+c := card.New().
+    Title("可配置卡片").
+    Tool(template.HTML(`&lt;button&gt;刷新&lt;/button&gt;`)).
+    Tool(template.HTML(`&lt;button&gt;设置&lt;/button&gt;`)).
+    Collapsible(true).
+    Collapsed(false).  // 初始展开
+    Removable(true).
+    Loading(true).     // 显示加载状态
+    FullHeight(true).  // 占满可用高度
+    Render()</pre>
+
+            <h3>常用方法</h3>
+            <div class="method-card">
+                <div class="method-name">Title(title string)</div>
+                <div class="method-desc">设置卡片标题</div>
+            </div>
+            <div class="method-card">
+                <div class="method-name">Subtitle(subtitle string)</div>
+                <div class="method-desc">设置副标题</div>
+            </div>
+            <div class="method-card">
+                <div class="method-name">Content(content template.HTML)</div>
+                <div class="method-desc">设置卡片内容</div>
+            </div>
+            <div class="method-card">
+                <div class="method-name">Tool(tool template.HTML)</div>
+                <div class="method-desc">添加工具栏按钮</div>
+            </div>
+            <div class="method-card">
+                <div class="method-name">Collapsible(collapsible bool)</div>
+                <div class="method-desc">启用折叠功能</div>
+            </div>
+            <div class="method-card">
+                <div class="method-name">Removable(removable bool)</div>
+                <div class="method-desc">启用删除功能</div>
+            </div>
+            <div class="method-card">
+                <div class="method-name">Loading(loading bool)</div>
+                <div class="method-desc">显示加载状态</div>
+            </div>
+        </section>
+
+        <!-- Grid 工具栏 -->
+        <section class="content-section" id="grid-toolbar">
+            <h2>Grid 工具栏增强功能</h2>
+            <p>Grid 组件提供了丰富的工具栏功能，包括自定义工具、批量操作、下拉菜单等。</p>
+
+            <h3>工具栏工具 (Tool)</h3>
+            <pre>import "github.com/zhenyangze/goadmin/grid"
+
+// 添加自定义工具
+grid.AddTool(grid.ToolFunc{
+    RenderFn: func() template.HTML {
+        return template.HTML(`&lt;button class="btn btn-ghost" onclick="customAction()"&gt;自定义&lt;/button&gt;`)
+    },
+    ScriptFn: func() string {
+        return `function customAction() { alert('自定义操作！'); }`
+    },
+})
+
+// 启用工具栏按钮轮廓样式
+grid.UseToolsWithOutline()
+
+// 隐藏默认刷新按钮
+grid.HideRefresh()</pre>
+
+            <h3>AJAX 批量操作</h3>
+            <pre>// URL 方式的批量操作
+grid.BatchAction("导出选中", "/admin/export").
+    WithConfirm("确定要导出选中的记录吗？")
+
+// 处理器方式的批量操作（AJAX）
+grid.BatchActionWithHandler("批量审核", func(ctx context.Context, ids []string) error {
+    // 执行批量审核逻辑
+    for _, id := range ids {
+        // 更新记录状态
+    }
+    return nil
+}).WithConfirm("确定要审核选中的记录吗？")</pre>
+
+            <h3>弹窗表单</h3>
+            <pre>// 启用弹窗创建
+grid.UseDialogCreate()
+
+// 启用弹窗编辑
+grid.UseDialogEdit()
+
+// 设置弹窗尺寸
+grid.SetDialogFormDimensions("800px", "600px")</pre>
+
+            <h3>行选择器</h3>
+            <pre>// 配置行选择器
+grid.RowSelector().
+    TitleColumn("Title").      // 设置标题列
+    IDColumn("ID").            // 设置 ID 列
+    Click().                   // 点击行选中
+    Checked(func(record any) bool {
+        // 设置默认选中状态
+        return false
+    }).
+    Disable(func(record any) bool {
+        // 设置禁用状态
+        return false
+    })</pre>
+
+            <h3>分页选项</h3>
+            <pre>// 简化分页（只显示上一页/下一页）
+grid.UseSimplePaginate()
+
+// 设置每页选项
+grid.SetPerPages([]int{10, 20, 50, 100})
+
+// 隐藏分页
+grid.HidePagination()</pre>
+
+            <h3>表格样式</h3>
+            <pre>// 启用横向滚动条
+grid.UseScrollbarX()
+
+// 添加自定义表格 CSS 类
+grid.AddTableClass("table-compact", "table-hover")</pre>
+        </section>
+
         <!-- 部署指南 -->
         <section class="content-section" id="deploy">
             <h2>部署指南</h2>
@@ -1134,6 +1603,8 @@ CMD ["./admin"]</pre>
                 <a href="#quickstart" class="quick-nav-item">快速开始</a>
                 <a href="#grid" class="quick-nav-item">列表页</a>
                 <a href="#form" class="quick-nav-item">表单页</a>
+                <a href="#widgets" class="quick-nav-item">页面组件</a>
+                <a href="#grid-toolbar" class="quick-nav-item">工具栏</a>
                 <a href="#auth" class="quick-nav-item">认证授权</a>
                 <a href="#deploy" class="quick-nav-item">部署指南</a>
             </div>
