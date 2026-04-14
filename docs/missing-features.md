@@ -91,30 +91,28 @@ GoAdmin 目前实现了 Dcat Admin 约 **60%** 的核心功能，主要缺失集
 
 ### 🟡 中优先级 (重要功能缺失)
 
-#### TODO-005: Form 表单字段扩展 (基础字段大部分已完成) [任务 #9]
-> **状态**: 45+/53 种字段已实现 (85%)
+#### TODO-005: Form 表单字段扩展 (基础字段大部分已完成) [任务 #9] ✅ 已完成
+> **状态**: 45+/53 种字段已实现 (85%), 高级字段已补充
 
 **已实现的字段:**
 - [x] Text, Textarea, Number, Email, URL, IP, Mobile, Password
 - [x] Date, Time, Datetime, DateRange, TimeRange, DateTimeRange
+- [x] Month 月份选择
+- [x] Year 年份选择
+- [x] Timezone 时区选择
+- [x] Tel 电话输入
+- [x] Captcha 验证码
 - [x] Select, MultiSelect, Radio, Checkbox, Switch, Tags, Listbox, Autocomplete
 - [x] Upload, Image, MultipleImage, MultipleFile
+- [x] WebUploader 高级文件上传
 - [x] Editor, Markdown, Html, Icon
 - [x] Color, Currency, KeyValue, Range, Rate, Slider
+- [x] ArrayField 数组字段
+- [x] CascadeGroup 级联分组
+- [x] Fieldset 字段分组
+- [x] PlainInput 纯文本输入
 - [x] Divider, Map, Tree, SelectTable, Table, HasMany, Embeds, Repeater
-
-**待实现的字段:**
-- [ ] 实现 Month 字段 - 月份选择
-- [ ] 实现 Year 字段 - 年份选择
-- [ ] 实现 Timezone 字段 - 时区选择
-- [ ] 实现 ArrayField 字段 - 数组字段
-- [ ] 实现 CascadeGroup 字段 - 级联分组
-- [ ] 实现 Fieldset 字段 - 字段分组
-- [ ] 实现 PlainInput 字段 - 纯文本输入
-- [ ] 实现 Tel 字段 - 电话输入
-- [ ] 实现 Captcha 字段 - 验证码
-- [ ] 实现 Nullable 字段 - 可空字段
-- [ ] 实现 WebUploader 字段 - 高级文件上传
+- [x] Nullable 可空字段
 
 #### TODO-006: Show 详情页功能 (部分完成) [任务 #4] ✅ 已完成
 > **状态**: 基础字段显示已存在，高级布局已实现
