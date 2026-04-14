@@ -2,21 +2,48 @@
 
 `Go Admin Build` is a Dcat Admin inspired admin framework implemented in Go.
 
-It keeps the page-builder workflow of `Grid`, `Form`, `Show`, `Tree`, `Auth`, `RBAC`, and `Menu`, but the runtime architecture is Go-native:
+**This repository contains:**
+- Demo application and documentation
+- Dcat Admin reference source
 
-- core app is `net/http` first
-- demo mounts through `gin`
-- persistence uses `gorm`
-- demo database uses `sqlite`
-- UI is built with `tailwindcss`
+**Core framework is at:** https://github.com/zhenyangze/goadmin
+
+## Repository Structure
+
+- `examples/demo/` - Demo application using the goadmin framework
+- `docs/` - Documentation (architecture, module mapping, runbook)
+- `dcat-admin/` - Reference PHP Dcat Admin source
+
+## Quick Start
+
+Install the core framework:
+```bash
+go get github.com/zhenyangze/goadmin
+```
+
+Build CSS:
+```bash
+npm install
+npm run build:css
+```
+
+Run demo:
+```bash
+cd examples/demo
+go run ./cmd/demo
+```
 
 ## What is included
 
 - reusable package under `goadmin/` (module: `github.com/zhenyangze/goadmin`)
 - built-in auth/RBAC/menu schema under `goadmin/auth`
+- audit logging with `LoginLog` and `AuditLog` (via repository hooks)
 - generic GORM repository under `goadmin/store/gormstore`
 - DSL builders for `grid`, `form`, `show`, and `tree`
-- configurable grid page/row actions plus common form fields like `multiselect`, `switch`, `tags`, `date-range`, `datetime`, single/multi `upload`, and `repeater`
+- **25 grid displayers**: badge, label, image, progress, qr, switch, checkbox, radio, select, expand, modal, table, tree, etc.
+- **22 widget components**: checkbox, radio, table, lazytable, terminal, chart, tab, dropdown, alert, etc.
+- configurable grid page/row actions, QuickEdit, and ContextMenu
+- server-side form validation with inline error feedback
 - relation-backed nested editing demoed via `Article -> FAQs`
 - reusable GORM relation-backed repeater repository helper for parent/child admin forms
 - one parent resource can now host multiple relation-backed repeaters (demo: `Article -> FAQs + Links`)
@@ -74,13 +101,13 @@ Open `http://127.0.0.1:8091/admin`
 - `/admin/roles`
 - `/admin/permissions`
 - `/admin/menus`
+- `/admin/audit-logs`
+- `/admin/login-logs`
 - `/admin/articles`
 - `/admin/projects`
-- `/admin/audits`
 - `/admin/tickets`
 - `/admin/reports`
-- `/admin/categories`
-- `/admin/categories/tree`
+- `/admin/categories` (with tree view)
 - `/admin/menus/tree`
 
 ## Embedding in another Go app
