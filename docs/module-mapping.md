@@ -7,17 +7,16 @@ This project references the local `dcat-admin` source tree and keeps the same pr
 | Dcat Admin module | Go Admin Build equivalent | Status |
 | --- | --- | --- |
 | `Layout/Content` | `goadmin.App` layout shell + embedded templates | implemented |
-| `Grid` | `goadmin/grid.Builder` + generic list rendering + configurable page/row actions | implemented |
-| `Form` | `goadmin/form.Builder` + generic create/update flow + multiselect/switch/tags/date-range/datetime/upload/repeater fields | implemented |
+| `Grid` | `goadmin/grid.Builder` + 25 displayers + configurable page/row actions | implemented |
+| `Form` | `goadmin/form.Builder` + 50+ field types + validation | implemented |
 | `Show` | `goadmin/show.Builder` + detail rendering | implemented |
-| `Tree` | `goadmin/tree.Builder` + `TreeProvider` + GORM tree config | implemented |
-| `Repositories` | `goadmin.Repository` + `goadmin/store/gormstore.Repository[T]` | implemented |
+| `Tree` | `goadmin/tree.Builder` + `TreeProvider` + drag-and-drop + batch actions | implemented |
+| `Repositories` | `goadmin.Repository` + `goadmin/store/gormstore.Repository[T]` + hooks | implemented |
 | `Models/AdminTablesSeeder` | `goadmin/auth` + `demo/seed` | implemented |
-| `Auth/Permission/Menu` | `goadmin/auth.Service` + sidebar navigation + auth resource repositories | implemented |
-| `Actions/Tools` | built-in CRUD actions + configurable grid page/row actions | partial |
-| `Widgets` | dashboard cards, quick actions, and panel/list widgets | partial |
+| `Auth/Permission/Menu` | `goadmin/auth.Service` + RBAC + audit logging + login logs | implemented |
+| `Actions/Tools` | built-in CRUD actions + QuickEdit + ContextMenu + grid page/row actions | implemented |
+| `Widgets` | 22 components: checkbox, radio, table, terminal, etc. | implemented |
 | `Extend/Scaffold/Console` | not yet ported | not implemented |
-| `PJAX/LazyRenderable` | not yet ported | not implemented |
 
 ## Design differences
 
@@ -28,27 +27,33 @@ This project references the local `dcat-admin` source tree and keeps the same pr
 
 ## Current verification surface
 
-- login/logout
-- RBAC-aware menu tree
-- dashboard metrics
+- login/logout with account lockout protection
+- RBAC-aware menu tree with permission checks
+- dashboard metrics with charts
 - dashboard panels and quick actions
 - grid search/filter/sort/pagination
+- 25 grid displayers (badge, label, image, switch, expand, modal, etc.)
 - configurable grid page actions and row actions
-- form create/update
+- QuickEdit inline editing
+- ContextMenu actions
+- form create/update with 50+ field types
 - server-side validation with inline field errors
 - upload validation, replacement cleanup, delete cleanup
 - repeater/nested has-many style JSON-backed editor
 - relation-backed nested editing demoed with article FAQs
 - reusable GORM relation-backed repeater repository helper
 - multiple relation-backed repeaters on one parent resource (demo: article FAQs + links)
-- reusable repository hooks/extension API
-- show/detail pages
-- tree rendering
+- reusable repository hooks/extension API with audit logging
+- show/detail pages with relations
+- tree rendering with drag-and-drop
+- tree batch operations
+- 22 widget components (checkbox, radio, table, terminal, etc.)
 - gin + sqlite runnable demo
 
 ## Next expansion candidates
 
-1. extension hooks, widget registry, and code generation
-2. finer-grained action/tool/widget extension APIs
-3. stronger upload adapters (cloud/object storage, image transforms, async processing)
-4. more generic relation-backed nested editors beyond the article FAQ demo
+1. password policy (strength validation, expiration)
+2. code generator/scaffolding CLI
+3. finer-grained action/tool/widget extension APIs
+4. stronger upload adapters (cloud/object storage, image transforms, async processing)
+5. more generic relation-backed nested editors beyond the article FAQ demo

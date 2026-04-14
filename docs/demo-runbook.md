@@ -55,34 +55,52 @@ By default this uses:
    - module verification links
 3. Open `Users`, `Roles`, `Permissions`, and `Menus`.
 4. Open `Articles` and verify:
-   - image preview
+   - image preview (Image displayer)
    - gallery count
    - FAQ count
    - links count
-   - tags badges
+   - tags badges (Badge/Label displayers)
+   - status switches (SwitchDisplay)
 5. Open `Projects` and verify:
    - seeded milestones render
    - status badges render
+   - progress bars (ProgressBar displayer)
    - detail page shows milestone list
 6. Open `Audit Logs` and verify:
    - list page is read-only
    - detail page shows actor/resource/detail
-7. Open `Tickets` and verify:
+   - auto-generated from repository hooks
+7. Open `Login Logs` and verify:
+   - login/logout/failed/locked actions
+   - IP and user agent tracking
+8. Open `Tickets` and verify:
    - belongs-to project name renders
-   - status/priority render
+   - status/priority badges
    - detail page shows assignee/project/due date
-8. Open `Reports` and verify:
+9. Open `Reports` and verify:
    - read-only metric/report snapshots
    - trend badge rendering
    - detail page shows metric/dimension/value
-9. Create a new article with:
-   - image upload
-   - gallery upload
-   - FAQ rows
-   - link rows
-10. Create a new project with milestones.
-11. Create a new ticket and assign it to a project.
-12. Open `Categories` tree and `Menus` tree.
+10. Test Grid Displayers:
+    - Checkbox displayer for boolean fields
+    - Radio displayer for single-select fields
+    - Expand displayer for collapsible content
+    - Modal displayer for popup content
+    - Downloadable displayer for file links
+    - Orderable displayer for sortable items
+    - Tree displayer for hierarchical data
+11. Create a new article with:
+    - image upload
+    - gallery upload
+    - FAQ rows
+    - link rows
+12. Create a new project with milestones.
+13. Create a new ticket and assign it to a project.
+14. Open `Categories` tree and `Menus` tree.
+15. Test tree features:
+    - drag-and-drop reordering
+    - batch actions
+    - expand/collapse
 
 ## Notes
 

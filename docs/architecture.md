@@ -44,12 +44,20 @@ goadmin/
   contracts.go         # repository/auth/navigation contracts
   resource.go          # resource registration and page metadata
   auth/                # built-in GORM auth/RBAC/menu models + service
-  form/                # form builder DSL
-  grid/                # grid builder DSL
+  audit/               # audit logging hooks and models
+  form/                # form builder DSL with 50+ field types
+  grid/                # grid builder DSL with 25 displayers
   show/                # show builder DSL
   store/gormstore/     # generic GORM CRUD/tree repository
   theme/               # theme defaults and UI tokens
   tree/                # tree builder DSL
+  widgets/             # UI widgets (22 components)
+    checkbox/          # checkbox widget
+    radio/             # radio widget
+    table/             # table widget
+    lazytable/         # lazy loading table widget
+    terminal/          # terminal/console widget
+    ...
 ```
 
 ## Why `net/http` first
@@ -82,6 +90,24 @@ The demo should prove:
 
 - full plugin marketplace
 - pjax/asynchronous partial-refresh UX parity
-- drag-and-drop tree reordering
 - code generator/scaffolding CLI parity
-- all Dcat field types
+
+## Recently Implemented
+
+### Grid Displayers (25 total)
+All major displayers are now implemented:
+- **Visual**: Badge, Label, Image, ProgressBar, QRCode
+- **Interactive**: SwitchDisplay, Checkbox, Radio, Select, SwitchGroup
+- **Input**: Input, Textarea, Editable
+- **Navigation**: Link, Downloadable, Button, DropdownActions
+- **Layout**: Expand, Modal, Limit, Copyable
+- **Data**: Table, Tree, DialogTree, Orderable
+
+### Widgets (22 total)
+Dashboard and form widgets:
+- **Form**: Checkbox, Radio, Form
+- **Display**: Table, LazyTable, Card, Box
+- **Feedback**: Alert, Callout, Tooltip, Modal
+- **Content**: Markdown, Code, Terminal
+- **Navigation**: Tab, Dropdown, Tree
+- **Utilities**: Async, Lazy, Dump, DarkModeSwitcher

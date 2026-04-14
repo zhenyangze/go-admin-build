@@ -329,6 +329,11 @@
         <div class="nav-section">
             <div class="nav-section-title">页面组件</div>
             <a href="#widgets" class="nav-item">组件概述</a>
+            <a href="#widget-checkbox" class="nav-item">复选框 Checkbox</a>
+            <a href="#widget-radio" class="nav-item">单选框 Radio</a>
+            <a href="#widget-table" class="nav-item">表格 Table</a>
+            <a href="#widget-lazytable" class="nav-item">懒加载表格 LazyTable</a>
+            <a href="#widget-terminal" class="nav-item">终端 Terminal</a>
             <a href="#widget-chart" class="nav-item">图表 Chart</a>
             <a href="#widget-tab" class="nav-item">选项卡 Tab</a>
             <a href="#widget-dropdown" class="nav-item">下拉菜单 Dropdown</a>
@@ -700,6 +705,110 @@ g.RowActions(
 
             <h3>分页配置</h3>
             <pre>g.Paginate(20)  // 每页 20 条（默认 15）</pre>
+
+            <h3>列展示器 (Displayers)</h3>
+            <p>Displayers 用于自定义列数据的展示方式，支持 25 种内置展示器。</p>
+
+            <h4>视觉展示类</h4>
+            <pre>// 徽章标签
+grid.Column("status", "状态").
+    Displayer(grid.Badge().Style(grid.BadgeStyleSuccess))
+
+// 图片预览
+grid.Column("avatar", "头像").
+    Displayer(grid.Image().Size(50, 50).Preview(true))
+
+// 进度条
+grid.Column("completion", "进度").
+    Displayer(grid.ProgressBar().Range(0, 100).ShowText(true))
+
+// 二维码
+grid.Column("code", "二维码").
+    Displayer(grid.QRCode().Size(128))</pre>
+
+            <h4>状态展示类</h4>
+            <pre>// 开关状态
+grid.Column("is_active", "启用").
+    Displayer(grid.SwitchDisplay().Text("是", "否"))
+
+// 复选框
+grid.Column("enabled", "启用").
+    Displayer(grid.Checkbox().Disabled(true))
+
+// 单选
+grid.Column("priority", "优先级").
+    Displayer(grid.Radio().OptionsMap(priorityOptions))
+
+// 选择标签
+grid.Column("status", "状态").
+    Displayer(grid.SelectDisplay().
+        OptionsMap(statusOptions).
+        Color("active", "green").
+        Color("inactive", "red"))</pre>
+
+            <h4>操作类</h4>
+            <pre>// 链接
+grid.Column("website", "网站").
+    Displayer(grid.Link().Target("_blank"))
+
+// 可下载链接
+grid.Column("file", "附件").
+    Displayer(grid.Downloadable().Text("下载"))
+
+// 按钮
+grid.Column("action", "操作").
+    Displayer(grid.Button("查看").Style(grid.ActionPrimary))
+
+// 下拉菜单
+grid.Column("actions", "更多").
+    Displayer(grid.DropdownActions("操作").
+        Action("编辑", editURL).
+        ActionWithConfirm("删除", deleteURL, "确定删除？"))</pre>
+
+            <h4>布局类</h4>
+            <pre>// 展开详情
+grid.Column("details", "详情").
+    Displayer(grid.Expand().
+        Summary("点击查看详情").
+        Content(func(record, value any) template.HTML {
+            return template.HTML(fmt.Sprintf("<pre>%v</pre>", value))
+        }))
+
+// 弹窗
+grid.Column("preview", "预览").
+    Displayer(grid.Modal("查看").
+        Title("内容预览").
+        Size("lg"))
+
+// 文本截断
+grid.Column("content", "内容").
+    Displayer(grid.Limit(50).Tooltip(true))
+
+// 可复制文本
+grid.Column("api_key", "API Key").
+    Displayer(grid.Copyable().MaxLength(30))</pre>
+
+            <h4>数据展示类</h4>
+            <pre>// 嵌套表格
+grid.Column("items", "项目").
+    Displayer(grid.Table().Columns("name", "price").MaxRows(5))
+
+// 树形展示
+grid.Column("category", "分类").
+    Displayer(grid.Tree().MaxDepth(3))
+
+// 树形弹窗
+grid.Column("categories", "分类").
+    Displayer(grid.DialogTree("查看树").Size("lg"))
+
+// 排序标识
+grid.Column("sort_order", "排序").
+    Displayer(grid.Orderable().ShowArrows(true))</pre>
+
+            <div class="tip">
+                <div class="tip-title">完整列表</div>
+                <p>共 25 种 Displayers：Badge, Label, Image, ProgressBar, QRCode, SwitchDisplay, Checkbox, Radio, Select, SwitchGroup, Input, Textarea, Editable, Link, Downloadable, Button, DropdownActions, Expand, Modal, Limit, Copyable, Table, Tree, DialogTree, Orderable</p>
+            </div>
         </section>
 
         <!-- Form 表单页 -->
@@ -1103,34 +1212,180 @@ app.SetTemplate("login", myCustomLogin)</pre>
                 <tr>
                     <td>Chart</td>
                     <td>图表组件，支持多种图表类型</td>
-                    <td><code class="inline-code">github.com/zhenyangze/goadmin/widgets/chart</code></td>
+                    <td><code class="inline-code">widgets/chart</code></td>
                 </tr>
                 <tr>
                     <td>Tab</td>
-                    <td>选项卡组件，支持横向/纵向布局</td>
-                    <td><code class="inline-code">github.com/zhenyangze/goadmin/widgets/tab</code></td>
+                    <td>选项卡组件</td>
+                    <td><code class="inline-code">widgets/tab</code></td>
                 </tr>
                 <tr>
                     <td>Dropdown</td>
                     <td>下拉菜单组件</td>
-                    <td><code class="inline-code">github.com/zhenyangze/goadmin/widgets/dropdown</code></td>
+                    <td><code class="inline-code">widgets/dropdown</code></td>
                 </tr>
                 <tr>
                     <td>Alert</td>
-                    <td>警告框和 Toast 通知</td>
-                    <td><code class="inline-code">github.com/zhenyangze/goadmin/widgets/alert</code></td>
+                    <td>警告框组件</td>
+                    <td><code class="inline-code">widgets/alert</code></td>
                 </tr>
                 <tr>
                     <td>Async</td>
                     <td>异步加载组件</td>
-                    <td><code class="inline-code">github.com/zhenyangze/goadmin/widgets/async</code></td>
+                    <td><code class="inline-code">widgets/async</code></td>
                 </tr>
                 <tr>
                     <td>Card</td>
                     <td>卡片容器组件</td>
-                    <td><code class="inline-code">github.com/zhenyangze/goadmin/widgets/card</code></td>
+                    <td><code class="inline-code">widgets/card</code></td>
+                </tr>
+                <tr>
+                    <td>Checkbox</td>
+                    <td>复选框组件</td>
+                    <td><code class="inline-code">widgets/checkbox</code></td>
+                </tr>
+                <tr>
+                    <td>Radio</td>
+                    <td>单选框组件</td>
+                    <td><code class="inline-code">widgets/radio</code></td>
+                </tr>
+                <tr>
+                    <td>Table</td>
+                    <td>表格组件</td>
+                    <td><code class="inline-code">widgets/table</code></td>
+                </tr>
+                <tr>
+                    <td>LazyTable</td>
+                    <td>懒加载表格组件</td>
+                    <td><code class="inline-code">widgets/lazytable</code></td>
+                </tr>
+                <tr>
+                    <td>Terminal</td>
+                    <td>终端/控制台输出组件</td>
+                    <td><code class="inline-code">widgets/terminal</code></td>
+                </tr>
+                <tr>
+                    <td>Tree</td>
+                    <td>树形组件</td>
+                    <td><code class="inline-code">widgets/tree</code></td>
+                </tr>
+                <tr>
+                    <td>Code</td>
+                    <td>代码高亮组件</td>
+                    <td><code class="inline-code">widgets/code</code></td>
+                </tr>
+                <tr>
+                    <td>Markdown</td>
+                    <td>Markdown 渲染组件</td>
+                    <td><code class="inline-code">widgets/markdown</code></td>
+                </tr>
+                <tr>
+                    <td>Tooltip</td>
+                    <td>工具提示组件</td>
+                    <td><code class="inline-code">widgets/tooltip</code></td>
                 </tr>
             </table>
+
+            <h3>新增组件示例</h3>
+
+            <h4>Checkbox 复选框</h4>
+            <pre>import "github.com/zhenyangze/goadmin/widgets/checkbox"
+
+w := checkbox.New("permissions").
+    Options(
+        checkbox.Option{Value: "read", Label: "读取"},
+        checkbox.Option{Value: "write", Label: "写入"},
+        checkbox.Option{Value: "delete", Label: "删除"},
+    ).
+    SetChecked([]string{"read", "write"}).
+    Inline(true)
+
+html := w.RenderTo()</pre>
+
+            <h4>Radio 单选框</h4>
+            <pre>import "github.com/zhenyangze/goadmin/widgets/radio"
+
+w := radio.New("status").
+    OptionsMap(map[string]string{
+        "active":   "启用",
+        "inactive": "禁用",
+        "pending":  "待审核",
+    }).
+    Selected("active").
+    Inline(true)
+
+html := w.RenderTo()</pre>
+
+            <h4>Table 表格</h4>
+            <pre>import "github.com/zhenyangze/goadmin/widgets/table"
+
+// 方式1：使用 Rows
+w := table.New().
+    ID("my-table").
+    Column("name", "名称").
+    Column("email", "邮箱").
+    Column("role", "角色").
+    Row(map[string]template.HTML{
+        "name":  template.HTML("张三"),
+        "email": template.HTML("zhangsan@example.com"),
+        "role":  template.HTML("管理员"),
+    }).
+    Striped(true).
+    Hover(true)
+
+// 方式2：简单表格
+headers := []string{"名称", "年龄", "城市"}
+data := [][]string{
+    {"张三", "30", "北京"},
+    {"李四", "25", "上海"},
+}
+w := table.SimpleTable(headers, data)
+
+html := w.RenderTo()</pre>
+
+            <h4>LazyTable 懒加载表格</h4>
+            <pre>import "github.com/zhenyangze/goadmin/widgets/lazytable"
+
+w := lazytable.New("users-table").
+    LoadURL("/api/users").
+    Column("id", "ID").
+    Column("name", "名称").
+    Column("email", "邮箱").
+    PageSize(20).
+    Striped(true)
+
+html := w.RenderTo()</pre>
+
+            <h4>Terminal 终端输出</h4>
+            <pre>import "github.com/zhenyangze/goadmin/widgets/terminal"
+
+// 程序化创建
+w := terminal.New().
+    ID("build-log").
+    Theme("dark").
+    Height("400px").
+    AddCommand("npm install").
+    AddInfo("正在安装依赖...").
+    AddSuccess("依赖安装成功！").
+    AddWarning("发现已弃用的包").
+    AddError("构建失败：缺少模块")
+
+// 从静态内容创建
+content := `$ npm install
+Installing packages...
+[OK] Installed 42 packages
+$ npm run build
+Building application...
+[ERROR] Module not found`
+
+w := terminal.Static(content)
+
+html := w.RenderTo()</pre>
+
+            <div class="tip">
+                <div class="tip-title">组件总数</div>
+                <p>GoAdmin 目前提供 22 种 Widgets 组件，涵盖表单、展示、导航、反馈、工具等多个类别。</p>
+            </div>
         </section>
 
         <!-- 图表组件 -->
@@ -1461,6 +1716,201 @@ c := card.New().
             <div class="method-card">
                 <div class="method-name">Loading(loading bool)</div>
                 <div class="method-desc">显示加载状态</div>
+            </div>
+        </section>
+
+        <!-- Checkbox 组件 -->
+        <section class="content-section" id="widget-checkbox">
+            <h2>复选框组件 Checkbox</h2>
+            <p>Checkbox 组件用于表单中的多选场景，支持横向/纵向布局。</p>
+
+            <h3>基本用法</h3>
+            <pre>import "github.com/zhenyangze/goadmin/widgets/checkbox"
+
+w := checkbox.New("permissions").
+    Options(
+        checkbox.Option{Value: "read", Label: "读取"},
+        checkbox.Option{Value: "write", Label: "写入"},
+        checkbox.Option{Value: "delete", Label: "删除"},
+    ).
+    SetChecked([]string{"read", "write"}).
+    Inline(false)
+
+html := w.RenderTo()</pre>
+
+            <h3>常用方法</h3>
+            <div class="method-card">
+                <div class="method-name">Option(value, label string)</div>
+                <div class="method-desc">添加单个选项</div>
+            </div>
+            <div class="method-card">
+                <div class="method-name">OptionsMap(m map[string]string)</div>
+                <div class="method-desc">从 Map 添加选项</div>
+            </div>
+            <div class="method-card">
+                <div class="method-name">SetChecked(values []string)</div>
+                <div class="method-desc">设置选中值</div>
+            </div>
+            <div class="method-card">
+                <div class="method-name">Inline(inline bool)</div>
+                <div class="method-desc">是否横向排列</div>
+            </div>
+        </section>
+
+        <!-- Radio 组件 -->
+        <section class="content-section" id="widget-radio">
+            <h2>单选框组件 Radio</h2>
+            <p>Radio 组件用于表单中的单选场景。</p>
+
+            <h3>基本用法</h3>
+            <pre>import "github.com/zhenyangze/goadmin/widgets/radio"
+
+w := radio.New("status").
+    OptionsMap(map[string]string{
+        "active":   "启用",
+        "inactive": "禁用",
+    }).
+    Selected("active").
+    Inline(true)
+
+html := w.RenderTo()</pre>
+
+            <h3>常用方法</h3>
+            <div class="method-card">
+                <div class="method-name">Selected(value string)</div>
+                <div class="method-desc">设置选中值</div>
+            </div>
+        </section>
+
+        <!-- Table 组件 -->
+        <section class="content-section" id="widget-table">
+            <h2>表格组件 Table</h2>
+            <p>Table 组件用于在 Dashboard 或详情页中展示结构化数据。</p>
+
+            <h3>基本用法</h3>
+            <pre>import "github.com/zhenyangze/goadmin/widgets/table"
+
+// 完整用法
+w := table.New().
+    ID("my-table").
+    Column("name", "名称").
+    Column("email", "邮箱").
+    Row(map[string]template.HTML{
+        "name":  template.HTML("张三"),
+        "email": template.HTML("zhangsan@example.com"),
+    }).
+    Striped(true).
+    Hover(true).
+    Bordered(false)
+
+// 简单用法
+w := table.SimpleTable(
+    []string{"名称", "年龄"},
+    [][]string{
+        {"张三", "30"},
+        {"李四", "25"},
+    },
+)
+
+html := w.RenderTo()</pre>
+
+            <h3>常用方法</h3>
+            <div class="method-card">
+                <div class="method-name">Column(name, label string)</div>
+                <div class="method-desc">添加列定义</div>
+            </div>
+            <div class="method-card">
+                <div class="method-name">Row(values map[string]template.HTML)</div>
+                <div class="method-desc">添加数据行</div>
+            </div>
+            <div class="method-card">
+                <div class="method-name">Striped(striped bool)</div>
+                <div class="method-desc">启用斑马纹</div>
+            </div>
+            <div class="method-card">
+                <div class="method-name">Hover(hover bool)</div>
+                <div class="method-desc">启用悬停效果</div>
+            </div>
+        </section>
+
+        <!-- LazyTable 组件 -->
+        <section class="content-section" id="widget-lazytable">
+            <h2>懒加载表格 LazyTable</h2>
+            <p>LazyTable 组件支持异步加载数据，适合大数据量场景。</p>
+
+            <h3>基本用法</h3>
+            <pre>import "github.com/zhenyangze/goadmin/widgets/lazytable"
+
+w := lazytable.New("users-table").
+    LoadURL("/api/users").
+    Column("id", "ID").
+    Column("name", "名称").
+    Column("email", "邮箱").
+    PageSize(20).
+    EmptyText("暂无数据")
+
+html := w.RenderTo()</pre>
+
+            <h3>API 响应格式</h3>
+            <pre>// 服务端需要返回 JSON 数组
+[
+    {"id": 1, "name": "张三", "email": "zhangsan@example.com"},
+    {"id": 2, "name": "李四", "email": "lisi@example.com"}
+]</pre>
+        </section>
+
+        <!-- Terminal 组件 -->
+        <section class="content-section" id="widget-terminal">
+            <h2>终端组件 Terminal</h2>
+            <p>Terminal 组件用于展示命令行输出，适合日志显示、构建输出等场景。</p>
+
+            <h3>基本用法</h3>
+            <pre>import "github.com/zhenyangze/goadmin/widgets/terminal"
+
+// 程序化创建
+w := terminal.New().
+    ID("build-log").
+    Theme("dark").
+    Height("400px").
+    AddCommand("npm install").
+    AddInfo("正在安装依赖...").
+    AddSuccess("依赖安装成功！").
+    AddWarning("发现已弃用的包").
+    AddError("构建失败：缺少模块")
+
+// 从字符串解析
+content := `$ npm install
+[OK] Installed 42 packages
+$ npm run build
+[ERROR] Module not found`
+
+w := terminal.Static(content)
+
+html := w.RenderTo()</pre>
+
+            <h3>主题</h3>
+            <p>支持 <code class="inline-code">dark</code> 和 <code class="inline-code">light</code> 两种主题。</p>
+
+            <h3>方法列表</h3>
+            <div class="method-card">
+                <div class="method-name">AddCommand(text string)</div>
+                <div class="method-desc">添加命令行（蓝色）</div>
+            </div>
+            <div class="method-card">
+                <div class="method-name">AddInfo(text string)</div>
+                <div class="method-desc">添加信息（灰色）</div>
+            </div>
+            <div class="method-card">
+                <div class="method-name">AddSuccess(text string)</div>
+                <div class="method-desc">添加成功信息（绿色）</div>
+            </div>
+            <div class="method-card">
+                <div class="method-name">AddWarning(text string)</div>
+                <div class="method-desc">添加警告信息（黄色）</div>
+            </div>
+            <div class="method-card">
+                <div class="method-name">AddError(text string)</div>
+                <div class="method-desc">添加错误信息（红色）</div>
             </div>
         </section>
 
