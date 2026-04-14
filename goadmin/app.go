@@ -583,7 +583,9 @@ func (a *App) handleCreate(w http.ResponseWriter, r *http.Request, state *sessio
 		a.renderFormError(w, r, state, identity, resource, builder, nil, "", submitted, fieldErrors, "Please correct the highlighted fields.")
 		return
 	}
-	if err := resource.Repository.Create(r.Context(), submitted); err != nil {
+	// 将 identity 添加到 context
+	ctx := context.WithValue(r.Context(), "identity", identity)
+	if err := resource.Repository.Create(ctx, submitted); err != nil {
 		a.cleanupSubmittedUploads(r.Context(), resource, submitted)
 		a.renderFormError(w, r, state, identity, resource, builder, nil, "", submitted, nil, err.Error())
 		return
@@ -623,7 +625,9 @@ func (a *App) handleUpdate(w http.ResponseWriter, r *http.Request, state *sessio
 		a.renderFormError(w, r, state, identity, resource, builder, existing, id, submitted, fieldErrors, "Please correct the highlighted fields.")
 		return
 	}
-	if err := resource.Repository.Update(r.Context(), id, submitted); err != nil {
+	// 将 identity 添加到 context
+	ctx := context.WithValue(r.Context(), "identity", identity)
+	if err := resource.Repository.Update(ctx, id, submitted); err != nil {
 		a.cleanupSubmittedUploads(r.Context(), resource, submitted)
 		a.renderFormError(w, r, state, identity, resource, builder, existing, id, submitted, nil, err.Error())
 		return
@@ -632,7 +636,7 @@ func (a *App) handleUpdate(w http.ResponseWriter, r *http.Request, state *sessio
 	http.Redirect(w, r, joinURL(a.cfg.Prefix, resource.Path, id)+"?flash=updated", http.StatusFound)
 }
 
-func (a *App) handleDelete(w http.ResponseWriter, r *http.Request, state *sessionState, _ *Identity, resource Resource, id string) {
+func (a *App) handleDelete(w http.ResponseWriter, r *http.Request, state *sessionState, identity *Identity, resource Resource, id string) {
 	if err := r.ParseForm(); err != nil {
 		a.writeError(w, http.StatusBadRequest, err)
 		return
@@ -649,7 +653,9 @@ func (a *App) handleDelete(w http.ResponseWriter, r *http.Request, state *sessio
 			existing = record
 		}
 	}
-	if err := resource.Repository.Delete(r.Context(), id); err != nil {
+	// 将 identity 添加到 context
+	ctx := context.WithValue(r.Context(), "identity", identity)
+	if err := resource.Repository.Delete(ctx, id); err != nil {
 		a.writeError(w, http.StatusBadRequest, err)
 		return
 	}

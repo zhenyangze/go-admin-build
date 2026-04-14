@@ -815,12 +815,956 @@ func (b *ButtonDisplayer) Display(record any, value any) template.HTML {
 		href, class, onclick, label))
 }
 
-// ==================== DropdownActions Displayer ====================
+// ==================== Checkbox Displayer ====================
 
-// DropdownActionsDisplayer displays a dropdown menu of actions
-type DropdownActionsDisplayer struct {
-	label   string
-	actions []DropdownAction
+// CheckboxDisplayer displays boolean values as checkboxes
+type CheckboxDisplayer struct {
+	checkedFunc func(record any, value any) bool
+	disabled    bool
+}
+
+// Checkbox creates a new checkbox displayer
+func Checkbox() *CheckboxDisplayer {
+	return &CheckboxDisplayer{}
+}
+
+// Checked sets a function to determine if checked
+func (c *CheckboxDisplayer) Checked(fn func(record any, value any) bool) *CheckboxDisplayer {
+	c.checkedFunc = fn
+	return c
+}
+
+// Disabled sets the disabled state
+func (c *CheckboxDisplayer) Disabled(disabled bool) *CheckboxDisplayer {
+	c.disabled = disabled
+	return c
+}
+
+// Display implements the Displayer interface
+func (c *CheckboxDisplayer) Display(record any, value any) template.HTML {
+	isChecked := false
+	if c.checkedFunc != nil {
+		isChecked = c.checkedFunc(record, value)
+	} else {
+		// Default check logic
+		switch v := value.(type) {
+		case bool:
+			isChecked = v
+		case int, int64:
+			isChecked = v != 0
+		case string:
+			isChecked = v == "1" || v == "true" || v == "yes" || v == "on"
+		}
+	}
+
+	checkedAttr := ""
+	if isChecked {
+		checkedAttr = " checked"
+	}
+
+	disabledAttr := ""
+	if c.disabled {
+		disabledAttr = " disabled"
+	}
+
+	return template.HTML(fmt.Sprintf(
+		`<input type="checkbox" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"%s%s onclick="return false;">`,
+		checkedAttr, disabledAttr))
+}
+
+// ==================== Radio Displayer ====================
+
+// RadioDisplayer displays values as radio buttons
+type RadioDisplayer struct {
+	options     []Option
+	selectedFunc func(record any, value any) string
+	disabled    bool
+	name        string
+}
+
+// Radio creates a new radio displayer
+func Radio() *RadioDisplayer {
+	return &RadioDisplayer{}
+}
+
+// Options sets the radio options
+func (r *RadioDisplayer) Options(options ...Option) *RadioDisplayer {
+	r.options = options
+	return r
+}
+
+// OptionsMap sets options from a map
+func (r *RadioDisplayer) OptionsMap(m map[string]string) *RadioDisplayer {
+	for k, v := range m {
+		r.options = append(r.options, Option{Value: k, Label: v})
+	}
+	return r
+}
+
+// Selected sets a function to determine selected value
+func (r *RadioDisplayer) Selected(fn func(record any, value any) string) *RadioDisplayer {
+	r.selectedFunc = fn
+	return r
+}
+
+// Disabled sets the disabled state
+func (r *RadioDisplayer) Disabled(disabled bool) *RadioDisplayer {
+	r.disabled = disabled
+	return r
+}
+
+// Name sets the radio group name
+func (r *RadioDisplayer) Name(name string) *RadioDisplayer {
+	r.name = name
+	return r
+}
+
+// Display implements the Displayer interface
+func (r *RadioDisplayer) Display(record any, value any) template.HTML {
+	if len(r.options) == 0 {
+		return template.HTML(`<span class="text-gray-400">-</span>`)
+	}
+
+	selectedValue := ""
+	if r.selectedFunc != nil {
+		selectedValue = r.selectedFunc(record, value)
+	} else {
+		selectedValue = fmt.Sprintf("%v", value)
+	}
+
+	disabledAttr := ""
+	if r.disabled {
+		disabledAttr = " disabled"
+	}
+
+	name := r.name
+	if name == "" {
+		name = "radio-group"
+	}
+
+	var sb strings.Builder
+	sb.WriteString(`<div class="flex flex-wrap gap-3">`)
+	for _, opt := range r.options {
+		checkedAttr := ""
+		if opt.Value == selectedValue {
+			checkedAttr = " checked"
+		}
+		sb.WriteString(fmt.Sprintf(
+			`<label class="inline-flex items-center cursor-pointer">`+
+				`<input type="radio" name="%s" value="%s" class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"%s%s onclick="return false;">`+
+				`<span class="ml-2 text-sm text-gray-700">%s</span>`+
+				`</label>`,
+			name, opt.Value, checkedAttr, disabledAttr, opt.Label))
+	}
+	sb.WriteString(`</div>`)
+
+	return template.HTML(sb.String())
+}
+
+// ==================== Select Displayer ====================
+
+// SelectDisplayer displays values as styled select options
+type SelectDisplayer struct {
+	options    []Option
+	colorMap   map[string]string
+	defaultColor string
+}
+
+// Select creates a new select displayer
+func SelectDisplay() *SelectDisplayer {
+	return &SelectDisplayer{
+		colorMap: make(map[string]string),
+		defaultColor: "gray",
+	}
+}
+
+// Options sets the select options
+func (s *SelectDisplayer) Options(options ...Option) *SelectDisplayer {
+	s.options = options
+	return s
+}
+
+// OptionsMap sets options from a map
+func (s *SelectDisplayer) OptionsMap(m map[string]string) *SelectDisplayer {
+	for k, v := range m {
+		s.options = append(s.options, Option{Value: k, Label: v})
+	}
+	return s
+}
+
+// Color sets the color for a specific value
+func (s *SelectDisplayer) Color(value, color string) *SelectDisplayer {
+	s.colorMap[value] = color
+	return s
+}
+
+// DefaultColor sets the default color
+func (s *SelectDisplayer) DefaultColor(color string) *SelectDisplayer {
+	s.defaultColor = color
+	return s
+}
+
+// Display implements the Displayer interface
+func (s *SelectDisplayer) Display(record any, value any) template.HTML {
+	valueStr := fmt.Sprintf("%v", value)
+	if valueStr == "<nil>" {
+		return template.HTML(`<span class="text-gray-400">-</span>`)
+	}
+
+	// Find label for value
+	label := valueStr
+	for _, opt := range s.options {
+		if opt.Value == valueStr {
+			label = opt.Label
+			break
+		}
+	}
+
+	color := s.defaultColor
+	if c, ok := s.colorMap[valueStr]; ok {
+		color = c
+	}
+
+	return template.HTML(fmt.Sprintf(
+		`<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-%s-100 text-%s-800">%s</span>`,
+		color, color, template.HTMLEscapeString(label)))
+}
+
+// ==================== SwitchGroup Displayer ====================
+
+// SwitchGroupDisplayer displays multiple switches for array values
+type SwitchGroupDisplayer struct {
+	options     []Option
+	separator   string
+}
+
+// SwitchGroup creates a new switch group displayer
+func SwitchGroup() *SwitchGroupDisplayer {
+	return &SwitchGroupDisplayer{
+		separator: ",",
+	}
+}
+
+// Options sets the switch options
+func (s *SwitchGroupDisplayer) Options(options ...Option) *SwitchGroupDisplayer {
+	s.options = options
+	return s
+}
+
+// Separator sets the value separator
+func (s *SwitchGroupDisplayer) Separator(sep string) *SwitchGroupDisplayer {
+	s.separator = sep
+	return s
+}
+
+// Display implements the Displayer interface
+func (s *SwitchGroupDisplayer) Display(record any, value any) template.HTML {
+	// Parse value as array
+	var values []string
+	switch v := value.(type) {
+	case []string:
+		values = v
+	case []any:
+		for _, item := range v {
+			values = append(values, fmt.Sprintf("%v", item))
+		}
+	case string:
+		if v != "" {
+			values = strings.Split(v, s.separator)
+		}
+	default:
+		values = []string{fmt.Sprintf("%v", value)}
+	}
+
+	if len(s.options) == 0 {
+		return template.HTML(`<span class="text-gray-400">-</span>`)
+	}
+
+	// Build value set for quick lookup
+	valueSet := make(map[string]bool)
+	for _, v := range values {
+		valueSet[strings.TrimSpace(v)] = true
+	}
+
+	var sb strings.Builder
+	sb.WriteString(`<div class="flex flex-wrap gap-2">`)
+	for _, opt := range s.options {
+		isOn := valueSet[opt.Value]
+		bgClass := "bg-gray-200"
+		dotClass := "translate-x-0.5"
+		if isOn {
+			bgClass = "bg-green-500"
+			dotClass = "translate-x-5"
+		}
+		sb.WriteString(fmt.Sprintf(
+			`<div class="flex items-center space-x-2">`+
+				`<div class="w-10 h-5 %s rounded-full relative transition-colors">`+
+				`<div class="w-4 h-4 bg-white rounded-full absolute top-0.5 left-0.5 %s transition-transform"></div>`+
+				`</div>`+
+				`<span class="text-sm text-gray-700">%s</span>`+
+				`</div>`,
+			bgClass, dotClass, opt.Label))
+	}
+	sb.WriteString(`</div>`)
+
+	return template.HTML(sb.String())
+}
+
+// ==================== Input Displayer ====================
+
+// InputDisplayer displays values as styled input fields
+type InputDisplayer struct {
+	placeholder string
+	readonly    bool
+	maxLength   int
+	type_       string // text, number, email, etc.
+}
+
+// Input creates a new input displayer
+func Input() *InputDisplayer {
+	return &InputDisplayer{
+		type_: "text",
+	}
+}
+
+// Placeholder sets the placeholder
+func (i *InputDisplayer) Placeholder(placeholder string) *InputDisplayer {
+	i.placeholder = placeholder
+	return i
+}
+
+// Readonly sets readonly state
+func (i *InputDisplayer) Readonly(readonly bool) *InputDisplayer {
+	i.readonly = readonly
+	return i
+}
+
+// MaxLength sets max length
+func (i *InputDisplayer) MaxLength(length int) *InputDisplayer {
+	i.maxLength = length
+	return i
+}
+
+// Type sets the input type
+func (i *InputDisplayer) Type(t string) *InputDisplayer {
+	i.type_ = t
+	return i
+}
+
+// Display implements the Displayer interface
+func (i *InputDisplayer) Display(record any, value any) template.HTML {
+	valueStr := fmt.Sprintf("%v", value)
+	if valueStr == "<nil>" {
+		valueStr = ""
+	}
+
+	readonlyAttr := ""
+	if i.readonly {
+		readonlyAttr = " readonly"
+	}
+
+	maxLengthAttr := ""
+	if i.maxLength > 0 {
+		maxLengthAttr = fmt.Sprintf(` maxlength="%d"`, i.maxLength)
+	}
+
+	placeholderAttr := ""
+	if i.placeholder != "" {
+		placeholderAttr = fmt.Sprintf(` placeholder="%s"`, i.placeholder)
+	}
+
+	return template.HTML(fmt.Sprintf(
+		`<input type="%s" value="%s" class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"%s%s%s onclick="return false;">`,
+		i.type_, template.HTMLEscapeString(valueStr), readonlyAttr, maxLengthAttr, placeholderAttr))
+}
+
+// ==================== Textarea Displayer ====================
+
+// TextareaDisplayer displays values as styled textareas
+type TextareaDisplayer struct {
+	rows     int
+	cols     int
+	readonly bool
+	maxLength int
+}
+
+// Textarea creates a new textarea displayer
+func Textarea() *TextareaDisplayer {
+	return &TextareaDisplayer{
+		rows: 3,
+		cols: 30,
+	}
+}
+
+// Rows sets the number of rows
+func (t *TextareaDisplayer) Rows(rows int) *TextareaDisplayer {
+	t.rows = rows
+	return t
+}
+
+// Cols sets the number of columns
+func (t *TextareaDisplayer) Cols(cols int) *TextareaDisplayer {
+	t.cols = cols
+	return t
+}
+
+// Readonly sets readonly state
+func (t *TextareaDisplayer) Readonly(readonly bool) *TextareaDisplayer {
+	t.readonly = readonly
+	return t
+}
+
+// MaxLength sets max length
+func (t *TextareaDisplayer) MaxLength(length int) *TextareaDisplayer {
+	t.maxLength = length
+	return t
+}
+
+// Display implements the Displayer interface
+func (t *TextareaDisplayer) Display(record any, value any) template.HTML {
+	valueStr := fmt.Sprintf("%v", value)
+	if valueStr == "<nil>" {
+		valueStr = ""
+	}
+
+	readonlyAttr := ""
+	if t.readonly {
+		readonlyAttr = " readonly"
+	}
+
+	maxLengthAttr := ""
+	if t.maxLength > 0 {
+		maxLengthAttr = fmt.Sprintf(` maxlength="%d"`, t.maxLength)
+	}
+
+	return template.HTML(fmt.Sprintf(
+		`<textarea rows="%d" cols="%d" class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 resize-none"%s%s onclick="return false;">%s</textarea>`,
+		t.rows, t.cols, readonlyAttr, maxLengthAttr, template.HTMLEscapeString(valueStr)))
+}
+
+// ==================== Expand Displayer ====================
+
+// ExpandDisplayer displays expandable content
+type ExpandDisplayer struct {
+	summary    string
+	contentFunc func(record any, value any) template.HTML
+	expanded   bool
+}
+
+// Expand creates a new expand displayer
+func Expand() *ExpandDisplayer {
+	return &ExpandDisplayer{}
+}
+
+// Summary sets the summary text
+func (e *ExpandDisplayer) Summary(summary string) *ExpandDisplayer {
+	e.summary = summary
+	return e
+}
+
+// Content sets the content function
+func (e *ExpandDisplayer) Content(fn func(record any, value any) template.HTML) *ExpandDisplayer {
+	e.contentFunc = fn
+	return e
+}
+
+// Expanded sets initial expanded state
+func (e *ExpandDisplayer) Expanded(expanded bool) *ExpandDisplayer {
+	e.expanded = expanded
+	return e
+}
+
+// Display implements the Displayer interface
+func (e *ExpandDisplayer) Display(record any, value any) template.HTML {
+	summary := e.summary
+	if summary == "" {
+		summary = fmt.Sprintf("%v", value)
+		if len(summary) > 50 {
+			summary = summary[:50] + "..."
+		}
+	}
+
+	openAttr := ""
+	if e.expanded {
+		openAttr = " open"
+	}
+
+	content := template.HTML("")
+	if e.contentFunc != nil {
+		content = e.contentFunc(record, value)
+	} else {
+		content = template.HTML(fmt.Sprintf("<div class='p-3 bg-gray-50 rounded'>%v</div>", value))
+	}
+
+	return template.HTML(fmt.Sprintf(
+		`<details class="group"%s>`+
+			`<summary class="cursor-pointer text-blue-600 hover:text-blue-800 font-medium">%s</summary>`+
+			`<div class="mt-2 text-sm text-gray-600">%s</div>`+
+			`</details>`,
+		openAttr, template.HTMLEscapeString(summary), content))
+}
+
+// ==================== Modal Displayer ====================
+
+// ModalDisplayer displays a modal trigger button
+type ModalDisplayer struct {
+	triggerLabel string
+	triggerStyle ActionStyle
+	title        string
+	contentFunc  func(record any, value any) template.HTML
+	size         string // sm, md, lg, xl
+}
+
+// Modal creates a new modal displayer
+func Modal(label string) *ModalDisplayer {
+	return &ModalDisplayer{
+		triggerLabel: label,
+		triggerStyle: ActionDefault,
+		size:         "md",
+	}
+}
+
+// Title sets the modal title
+func (m *ModalDisplayer) Title(title string) *ModalDisplayer {
+	m.title = title
+	return m
+}
+
+// Content sets the modal content function
+func (m *ModalDisplayer) Content(fn func(record any, value any) template.HTML) *ModalDisplayer {
+	m.contentFunc = fn
+	return m
+}
+
+// Size sets the modal size
+func (m *ModalDisplayer) Size(size string) *ModalDisplayer {
+	m.size = size
+	return m
+}
+
+// TriggerStyle sets the trigger button style
+func (m *ModalDisplayer) TriggerStyle(style ActionStyle) *ModalDisplayer {
+	m.triggerStyle = style
+	return m
+}
+
+// Display implements the Displayer interface
+func (m *ModalDisplayer) Display(record any, value any) template.HTML {
+	styleClasses := map[ActionStyle]string{
+		ActionDefault: "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50",
+		ActionPrimary: "bg-blue-600 text-white hover:bg-blue-700",
+		ActionGhost:   "bg-transparent text-gray-600 hover:bg-gray-100",
+		ActionDanger:  "bg-red-600 text-white hover:bg-red-700",
+	}
+
+	class := styleClasses[m.triggerStyle]
+	if class == "" {
+		class = styleClasses[ActionDefault]
+	}
+
+	sizeClasses := map[string]string{
+		"sm": "max-w-sm",
+		"md": "max-w-md",
+		"lg": "max-w-lg",
+		"xl": "max-w-xl",
+	}
+	sizeClass := sizeClasses[m.size]
+	if sizeClass == "" {
+		sizeClass = sizeClasses["md"]
+	}
+
+	title := m.title
+	if title == "" {
+		title = "Details"
+	}
+
+	content := template.HTML("")
+	if m.contentFunc != nil {
+		content = m.contentFunc(record, value)
+	} else {
+		content = template.HTML(fmt.Sprintf("<p>%v</p>", value))
+	}
+
+	return template.HTML(fmt.Sprintf(
+		`<span x-data="{ open: false }">`+
+			`<button @click="open = true" class="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded %s">%s</button>`+
+			`<div x-show="open" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">`+
+			`<div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">`+
+			`<div x-show="open" @click="open = false" class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"></div>`+
+			`<span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>`+
+			`<div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle %s">`+
+			`<div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">`+
+			`<div class="sm:flex sm:items-start">`+
+			`<div class="mt-3 text-center sm:mt-0 sm:text-left w-full">`+
+			`<h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">%s</h3>`+
+			`<div class="mt-2">%s</div>`+
+			`</div>`+
+			`</div>`+
+			`</div>`+
+			`<div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">`+
+			`<button @click="open = false" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">Close</button>`+
+			`</div>`+
+			`</div>`+
+			`</div>`+
+			`</div>`+
+			`</span>`,
+		class, m.triggerLabel, sizeClass, title, content))
+}
+
+// ==================== Downloadable Displayer ====================
+
+// DownloadableDisplayer displays values as downloadable links
+type DownloadableDisplayer struct {
+	urlFunc    func(record any, value any) string
+	filename   func(record any, value any) string
+	text       string
+	icon       bool
+}
+
+// Downloadable creates a new downloadable displayer
+func Downloadable() *DownloadableDisplayer {
+	return &DownloadableDisplayer{
+		icon: true,
+	}
+}
+
+// URL sets the download URL function
+func (d *DownloadableDisplayer) URL(fn func(record any, value any) string) *DownloadableDisplayer {
+	d.urlFunc = fn
+	return d
+}
+
+// Filename sets the filename function
+func (d *DownloadableDisplayer) Filename(fn func(record any, value any) string) *DownloadableDisplayer {
+	d.filename = fn
+	return d
+}
+
+// Text sets the link text
+func (d *DownloadableDisplayer) Text(text string) *DownloadableDisplayer {
+	d.text = text
+	return d
+}
+
+// ShowIcon shows/hides the download icon
+func (d *DownloadableDisplayer) ShowIcon(show bool) *DownloadableDisplayer {
+	d.icon = show
+	return d
+}
+
+// Display implements the Displayer interface
+func (d *DownloadableDisplayer) Display(record any, value any) template.HTML {
+	valueStr := fmt.Sprintf("%v", value)
+	if valueStr == "<nil>" || valueStr == "" {
+		return template.HTML(`<span class="text-gray-400">-</span>`)
+	}
+
+	url := valueStr
+	if d.urlFunc != nil {
+		url = d.urlFunc(record, value)
+	}
+
+	filename := ""
+	if d.filename != nil {
+		filename = d.filename(record, value)
+	} else {
+		filename = fmt.Sprintf("download-%v", value)
+	}
+
+	text := d.text
+	if text == "" {
+		text = valueStr
+		if len(text) > 30 {
+			text = text[:30] + "..."
+		}
+	}
+
+	iconHTML := ""
+	if d.icon {
+		iconHTML = `<svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>`
+	}
+
+	return template.HTML(fmt.Sprintf(
+		`<a href="%s" download="%s" class="inline-flex items-center text-blue-600 hover:text-blue-800 hover:underline">`+
+			`%s%s`+
+			`</a>`,
+		url, filename, iconHTML, template.HTMLEscapeString(text)))
+}
+
+// ==================== Orderable Displayer ====================
+
+// OrderableDisplayer displays sortable/orderable indicators
+type OrderableDisplayer struct {
+	orderFunc  func(record any, value any) int
+	showArrows bool
+}
+
+// Orderable creates a new orderable displayer
+func Orderable() *OrderableDisplayer {
+	return &OrderableDisplayer{
+		showArrows: true,
+	}
+}
+
+// Order sets the order function
+func (o *OrderableDisplayer) Order(fn func(record any, value any) int) *OrderableDisplayer {
+	o.orderFunc = fn
+	return o
+}
+
+// ShowArrows shows/hides the order arrows
+func (o *OrderableDisplayer) ShowArrows(show bool) *OrderableDisplayer {
+	o.showArrows = show
+	return o
+}
+
+// Display implements the Displayer interface
+func (o *OrderableDisplayer) Display(record any, value any) template.HTML {
+	order := 0
+	if o.orderFunc != nil {
+		order = o.orderFunc(record, value)
+	} else {
+		switch v := value.(type) {
+		case int:
+			order = v
+		case int64:
+			order = int(v)
+		case float64:
+			order = int(v)
+		default:
+			order = 0
+		}
+	}
+
+	arrowHTML := ""
+	if o.showArrows {
+		arrowHTML = `<div class="flex flex-col ml-2 text-gray-400">` +
+			`<svg class="w-3 h-3 hover:text-gray-600 cursor-pointer" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path></svg>` +
+			`<svg class="w-3 h-3 hover:text-gray-600 cursor-pointer" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>` +
+			`</div>`
+	}
+
+	return template.HTML(fmt.Sprintf(
+		`<div class="flex items-center justify-center">`+
+			`<span class="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">%d</span>`+
+			`%s`+
+			`</div>`,
+		order, arrowHTML))
+}
+
+// ==================== Tree Displayer ====================
+
+// TreeDisplayer displays hierarchical tree data
+type TreeDisplayer struct {
+	labelFunc   func(item map[string]any) string
+	childrenKey string
+	maxDepth    int
+	expanded    bool
+}
+
+// Tree creates a new tree displayer
+func Tree() *TreeDisplayer {
+	return &TreeDisplayer{
+		childrenKey: "children",
+		maxDepth:    3,
+	}
+}
+
+// Label sets the label function
+func (t *TreeDisplayer) Label(fn func(item map[string]any) string) *TreeDisplayer {
+	t.labelFunc = fn
+	return t
+}
+
+// ChildrenKey sets the children key
+func (t *TreeDisplayer) ChildrenKey(key string) *TreeDisplayer {
+	t.childrenKey = key
+	return t
+}
+
+// MaxDepth sets the maximum depth to display
+func (t *TreeDisplayer) MaxDepth(depth int) *TreeDisplayer {
+	t.maxDepth = depth
+	return t
+}
+
+// Expanded sets initial expanded state
+func (t *TreeDisplayer) Expanded(expanded bool) *TreeDisplayer {
+	t.expanded = expanded
+	return t
+}
+
+// Display implements the Displayer interface
+func (t *TreeDisplayer) Display(record any, value any) template.HTML {
+	var data []map[string]any
+
+	switch v := value.(type) {
+	case []map[string]any:
+		data = v
+	case string:
+		if v != "" {
+			json.Unmarshal([]byte(v), &data)
+		}
+	case []any:
+		for _, item := range v {
+			if m, ok := item.(map[string]any); ok {
+				data = append(data, m)
+			}
+		}
+	}
+
+	if len(data) == 0 {
+		return template.HTML(`<span class="text-gray-400">-</span>`)
+	}
+
+	treeHTML := t.buildTree(data, 0)
+	return template.HTML(treeHTML)
+}
+
+func (t *TreeDisplayer) buildTree(items []map[string]any, depth int) string {
+	if depth >= t.maxDepth {
+		return ""
+	}
+
+	var sb strings.Builder
+	sb.WriteString(`<ul class="space-y-1">`)
+	for _, item := range items {
+		label := ""
+		if t.labelFunc != nil {
+			label = t.labelFunc(item)
+		} else if name, ok := item["name"].(string); ok {
+			label = name
+		} else if title, ok := item["title"].(string); ok {
+			label = title
+		} else {
+			label = fmt.Sprintf("%v", item)
+		}
+
+		sb.WriteString(`<li class="flex items-center">`)
+		sb.WriteString(fmt.Sprintf(
+			`<span class="inline-flex items-center text-sm text-gray-700">`+
+				`<svg class="w-4 h-4 mr-1.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>`+
+				`%s</span>`, template.HTMLEscapeString(label)))
+
+		// Process children
+		if children, ok := item[t.childrenKey].([]any); ok && len(children) > 0 {
+			childMaps := make([]map[string]any, 0, len(children))
+			for _, child := range children {
+				if m, ok := child.(map[string]any); ok {
+					childMaps = append(childMaps, m)
+				}
+			}
+			if len(childMaps) > 0 {
+				sb.WriteString(`<ul class="ml-6 mt-1 space-y-1">`)
+				sb.WriteString(t.buildTree(childMaps, depth+1))
+				sb.WriteString(`</ul>`)
+			}
+		}
+		sb.WriteString(`</li>`)
+	}
+	sb.WriteString(`</ul>`)
+
+	return sb.String()
+}
+
+// ==================== DialogTree Displayer ====================
+
+// DialogTreeDisplayer displays a tree in a dialog
+type DialogTreeDisplayer struct {
+	triggerLabel string
+	title        string
+	treeDataFunc func(record any, value any) []map[string]any
+	size         string
+}
+
+// DialogTree creates a new dialog tree displayer
+func DialogTree(label string) *DialogTreeDisplayer {
+	return &DialogTreeDisplayer{
+		triggerLabel: label,
+		size:         "lg",
+	}
+}
+
+// Title sets the dialog title
+func (d *DialogTreeDisplayer) Title(title string) *DialogTreeDisplayer {
+	d.title = title
+	return d
+}
+
+// TreeData sets the tree data function
+func (d *DialogTreeDisplayer) TreeData(fn func(record any, value any) []map[string]any) *DialogTreeDisplayer {
+	d.treeDataFunc = fn
+	return d
+}
+
+// Size sets the dialog size
+func (d *DialogTreeDisplayer) Size(size string) *DialogTreeDisplayer {
+	d.size = size
+	return d
+}
+
+// Display implements the Displayer interface
+func (d *DialogTreeDisplayer) Display(record any, value any) template.HTML {
+	title := d.title
+	if title == "" {
+		title = "Tree View"
+	}
+
+	sizeClasses := map[string]string{
+		"sm":  "max-w-sm",
+		"md":  "max-w-md",
+		"lg":  "max-w-lg",
+		"xl":  "max-w-xl",
+		"2xl": "max-w-2xl",
+		"full": "max-w-full mx-4",
+	}
+	sizeClass := sizeClasses[d.size]
+	if sizeClass == "" {
+		sizeClass = sizeClasses["lg"]
+	}
+
+	var treeData []map[string]any
+	if d.treeDataFunc != nil {
+		treeData = d.treeDataFunc(record, value)
+	} else {
+		// Try to parse value as tree data
+		switch v := value.(type) {
+		case []map[string]any:
+			treeData = v
+		case string:
+			if v != "" {
+				json.Unmarshal([]byte(v), &treeData)
+			}
+		}
+	}
+
+	tree := &TreeDisplayer{childrenKey: "children", maxDepth: 10}
+	treeHTML := tree.buildTree(treeData, 0)
+
+	return template.HTML(fmt.Sprintf(
+		`<span x-data="{ open: false }">`+
+			`<button @click="open = true" class="inline-flex items-center px-3 py-1.5 text-sm font-medium bg-white border border-gray-300 rounded hover:bg-gray-50 text-gray-700">`+
+			`<svg class="w-4 h-4 mr-1.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>`+
+			`%s</button>`+
+			`<div x-show="open" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">`+
+			`<div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">`+
+			`<div x-show="open" @click="open = false" class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"></div>`+
+			`<span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>`+
+			`<div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle %s">`+
+			`<div class="bg-white px-4 pt-5 pb-4 sm:p-6">`+
+			`<div class="flex justify-between items-center mb-4">`+
+			`<h3 class="text-lg font-medium text-gray-900">%s</h3>`+
+			`<button @click="open = false" class="text-gray-400 hover:text-gray-500">`+
+			`<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`+
+			`</button>`+
+			`</div>`+
+			`<div class="max-h-96 overflow-y-auto">%s</div>`+
+			`</div>`+
+			`</div>`+
+			`</div>`+
+			`</div>`+
+			`</span>`,
+		d.triggerLabel, sizeClass, title, treeHTML))
 }
 
 // DropdownAction represents a single action in the dropdown
@@ -829,6 +1773,12 @@ type DropdownAction struct {
 	URL     func(record any, value any) string
 	Style   ActionStyle
 	Confirm string
+}
+
+// DropdownActionsDisplayer displays a dropdown menu of actions
+type DropdownActionsDisplayer struct {
+	label   string
+	actions []DropdownAction
 }
 
 // DropdownActions creates a new dropdown actions displayer

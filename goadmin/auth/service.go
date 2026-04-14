@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"errors"
+	"net/http"
 	"sort"
 	"time"
 
@@ -15,6 +16,46 @@ const (
 	// AdministratorRole grants full access.
 	AdministratorRole = "administrator"
 )
+
+// contextKey 用于在 context 中存储请求信息
+type contextKey int
+
+const (
+	requestInfoKey contextKey = iota
+)
+
+// RequestInfo 存储请求信息用于登录日志
+type RequestInfo struct {
+	IP        string
+	UserAgent string
+}
+
+// WithRequestInfo 将请求信息添加到 context
+func WithRequestInfo(ctx context.Context, r *http.Request) context.Context {
+	return context.WithValue(ctx, requestInfoKey, RequestInfo{
+		IP:        getClientIP(r),
+		UserAgent: r.UserAgent(),
+	})
+}
+
+// getRequestInfo 从 context 获取请求信息
+func getRequestInfo(ctx context.Context) RequestInfo {
+	if info, ok := ctx.Value(requestInfoKey).(RequestInfo); ok {
+		return info
+	}
+	return RequestInfo{}
+}
+
+func getClientIP(r *http.Request) string {
+	// 尝试从 X-Forwarded-For 获取（代理后面）
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		return xff
+	}
+	if xri := r.Header.Get("X-Real-Ip"); xri != "" {
+		return xri
+	}
+	return r.RemoteAddr
+}
 
 // User is the built-in admin account model.
 type User struct {
@@ -64,12 +105,31 @@ type Menu struct {
 
 // Service provides login, menu loading, and authorization over the built-in schema.
 type Service struct {
-	DB *gorm.DB
+	DB           *gorm.DB
+	LoginLogger  LoginLogger
+	MaxFailures  int           // 最大失败次数，超过则锁定
+	LockDuration time.Duration // 锁定时间
 }
 
 // NewService constructs the built-in auth service.
 func NewService(db *gorm.DB) *Service {
-	return &Service{DB: db}
+	return &Service{
+		DB:           db,
+		LoginLogger:  NewLoginLogRepository(db),
+		MaxFailures:  5,
+		LockDuration: 30 * time.Minute,
+	}
+}
+
+// SetLoginLogger 设置自定义登录日志记录器
+func (s *Service) SetLoginLogger(logger LoginLogger) {
+	s.LoginLogger = logger
+}
+
+// SetLockConfig 设置登录失败锁定配置
+func (s *Service) SetLockConfig(maxFailures int, lockDuration time.Duration) {
+	s.MaxFailures = maxFailures
+	s.LockDuration = lockDuration
 }
 
 // AutoMigrate creates the built-in auth tables.
@@ -91,18 +151,71 @@ func HashPassword(password string) (string, error) {
 
 // Authenticate validates a username/password pair.
 func (s *Service) Authenticate(ctx context.Context, username, password string) (*goadmin.Identity, error) {
+	reqInfo := getRequestInfo(ctx)
+
 	var user User
 	if err := s.DB.WithContext(ctx).
 		Preload("Roles.Permissions").
 		Preload("Roles.Menus").
 		Where("username = ?", username).
 		First(&user).Error; err != nil {
-		return nil, err
-	}
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+		// 记录失败日志 - 用户不存在
+		s.logLogin(ctx, nil, username, reqInfo.IP, reqInfo.UserAgent, "failed", "user not found")
 		return nil, errors.New("invalid username or password")
 	}
+
+	// 检查账户是否被锁定
+	if s.isLocked(ctx, username) {
+		s.logLogin(ctx, &user.ID, username, reqInfo.IP, reqInfo.UserAgent, "locked", "account temporarily locked due to multiple failed attempts")
+		return nil, errors.New("account temporarily locked due to multiple failed attempts, please try again later")
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+		// 记录失败日志 - 密码错误
+		s.logLogin(ctx, &user.ID, username, reqInfo.IP, reqInfo.UserAgent, "failed", "invalid password")
+		return nil, errors.New("invalid username or password")
+	}
+
+	// 记录成功登录
+	s.logLogin(ctx, &user.ID, username, reqInfo.IP, reqInfo.UserAgent, "login", "")
+
 	return toIdentity(&user), nil
+}
+
+// Logout 记录用户登出
+func (s *Service) Logout(ctx context.Context, identity *goadmin.Identity) error {
+	if identity == nil {
+		return nil
+	}
+	reqInfo := getRequestInfo(ctx)
+	s.logLogin(ctx, &identity.ID, identity.Username, reqInfo.IP, reqInfo.UserAgent, "logout", "")
+	return nil
+}
+
+// logLogin 记录登录行为
+func (s *Service) logLogin(ctx context.Context, userID *uint, username, ip, userAgent, action, reason string) {
+	if s.LoginLogger == nil {
+		return
+	}
+	// 异步记录，不影响主流程
+	go func() {
+		// 使用新的 context 避免父 context 取消
+		bgCtx := context.Background()
+		s.LoginLogger.LogLogin(bgCtx, userID, username, ip, userAgent, action, reason)
+	}()
+}
+
+// isLocked 检查账户是否被锁定
+func (s *Service) isLocked(ctx context.Context, username string) bool {
+	if s.LoginLogger == nil || s.MaxFailures <= 0 {
+		return false
+	}
+
+	failures, err := s.LoginLogger.GetRecentFailures(ctx, username, time.Now().Add(-s.LockDuration))
+	if err != nil {
+		return false
+	}
+	return failures >= int64(s.MaxFailures)
 }
 
 // FindIdentity reloads the current user from storage.

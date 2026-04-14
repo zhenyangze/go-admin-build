@@ -126,3 +126,32 @@ type DashboardData struct {
 	Cards       []DashboardCard
 	Panels      []DashboardPanel
 }
+
+// RepositoryHook defines operation interceptors for audit and extension.
+type RepositoryHook interface {
+	// BeforeCreate is called before creating a record.
+	// Return error to abort the operation.
+	BeforeCreate(ctx context.Context, values Values) error
+	// AfterCreate is called after successful creation.
+	// id is the newly created record ID.
+	AfterCreate(ctx context.Context, id string, values Values) error
+	// BeforeUpdate is called before updating a record.
+	BeforeUpdate(ctx context.Context, id string, values Values) error
+	// AfterUpdate is called after successful update.
+	// old contains the record before update (if available).
+	AfterUpdate(ctx context.Context, id string, values Values, old any) error
+	// BeforeDelete is called before deleting a record.
+	BeforeDelete(ctx context.Context, id string) error
+	// AfterDelete is called after successful deletion.
+	// deleted contains the record that was deleted (if available).
+	AfterDelete(ctx context.Context, id string, deleted any) error
+}
+
+// HookableRepository extends Repository with hook support.
+type HookableRepository interface {
+	Repository
+	// AddHook registers a repository hook.
+	AddHook(hook RepositoryHook)
+	// SetResourceName sets the resource name for hooks.
+	SetResourceName(name string)
+}

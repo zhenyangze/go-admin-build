@@ -33,6 +33,28 @@ type Repository[T any] struct {
 	Mutators     map[string]func(string) (any, error)
 	TreeConfig   *TreeConfig
 	Hooks        Hooks[T]
+	StdHooks     []goadmin.RepositoryHook // Standard hooks interface
+	resourceName string
+}
+
+// AddHook implements goadmin.HookableRepository.
+func (r *Repository[T]) AddHook(hook goadmin.RepositoryHook) {
+	r.StdHooks = append(r.StdHooks, hook)
+}
+
+// SetResourceName implements goadmin.HookableRepository.
+func (r *Repository[T]) SetResourceName(name string) {
+	r.resourceName = name
+}
+
+// runStdHooks executes standard RepositoryHook methods.
+func (r *Repository[T]) runStdHooks(ctx context.Context, method func(hook goadmin.RepositoryHook) error) error {
+	for _, hook := range r.StdHooks {
+		if err := method(hook); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 type HookFunc[T any] func(context.Context, HookContext[T]) error
@@ -148,6 +170,14 @@ func (r *Repository[T]) Create(ctx context.Context, values goadmin.Values) error
 	if err := r.assignValues(&item, values); err != nil {
 		return err
 	}
+
+	// Run standard BeforeCreate hooks
+	if err := r.runStdHooks(ctx, func(hook goadmin.RepositoryHook) error {
+		return hook.BeforeCreate(ctx, values)
+	}); err != nil {
+		return err
+	}
+
 	return r.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := r.runHooks(ctx, tx, &item, values, "", r.Hooks.BeforeCreate); err != nil {
 			return err
@@ -155,7 +185,15 @@ func (r *Repository[T]) Create(ctx context.Context, values goadmin.Values) error
 		if err := tx.Create(&item).Error; err != nil {
 			return err
 		}
-		return r.runHooks(ctx, tx, &item, values, "", r.Hooks.AfterCreate)
+		if err := r.runHooks(ctx, tx, &item, values, "", r.Hooks.AfterCreate); err != nil {
+			return err
+		}
+
+		// Run standard AfterCreate hooks (with the ID)
+		id := fmt.Sprintf("%v", reflect.ValueOf(item).FieldByName("ID").Interface())
+		return r.runStdHooks(ctx, func(hook goadmin.RepositoryHook) error {
+			return hook.AfterCreate(ctx, id, values)
+		})
 	})
 }
 
@@ -165,9 +203,21 @@ func (r *Repository[T]) Update(ctx context.Context, id string, values goadmin.Va
 	if err := r.DB.WithContext(ctx).First(&item, id).Error; err != nil {
 		return err
 	}
+
+	// Keep a copy of old item for hooks
+	oldItem := item
+
 	if err := r.assignValues(&item, values); err != nil {
 		return err
 	}
+
+	// Run standard BeforeUpdate hooks
+	if err := r.runStdHooks(ctx, func(hook goadmin.RepositoryHook) error {
+		return hook.BeforeUpdate(ctx, id, values)
+	}); err != nil {
+		return err
+	}
+
 	return r.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := r.runHooks(ctx, tx, &item, values, id, r.Hooks.BeforeUpdate); err != nil {
 			return err
@@ -175,7 +225,14 @@ func (r *Repository[T]) Update(ctx context.Context, id string, values goadmin.Va
 		if err := tx.Save(&item).Error; err != nil {
 			return err
 		}
-		return r.runHooks(ctx, tx, &item, values, id, r.Hooks.AfterUpdate)
+		if err := r.runHooks(ctx, tx, &item, values, id, r.Hooks.AfterUpdate); err != nil {
+			return err
+		}
+
+		// Run standard AfterUpdate hooks
+		return r.runStdHooks(ctx, func(hook goadmin.RepositoryHook) error {
+			return hook.AfterUpdate(ctx, id, values, oldItem)
+		})
 	})
 }
 
@@ -186,13 +243,28 @@ func (r *Repository[T]) Delete(ctx context.Context, id string) error {
 		if err := tx.First(&item, id).Error; err != nil {
 			return err
 		}
+
+		// Run standard BeforeDelete hooks
+		if err := r.runStdHooks(ctx, func(hook goadmin.RepositoryHook) error {
+			return hook.BeforeDelete(ctx, id)
+		}); err != nil {
+			return err
+		}
+
 		if err := r.runHooks(ctx, tx, &item, nil, id, r.Hooks.BeforeDelete); err != nil {
 			return err
 		}
 		if err := tx.Delete(&item).Error; err != nil {
 			return err
 		}
-		return r.runHooks(ctx, tx, &item, nil, id, r.Hooks.AfterDelete)
+		if err := r.runHooks(ctx, tx, &item, nil, id, r.Hooks.AfterDelete); err != nil {
+			return err
+		}
+
+		// Run standard AfterDelete hooks
+		return r.runStdHooks(ctx, func(hook goadmin.RepositoryHook) error {
+			return hook.AfterDelete(ctx, id, item)
+		})
 	})
 }
 

@@ -7,21 +7,21 @@
 
 ## 执行摘要
 
-GoAdmin 目前实现了 Dcat Admin 约 **75%** 的核心功能，主要缺失集中在 **RBAC权限系统**、**开发者工具** 和 **扩展系统** 方面。
+GoAdmin 目前实现了 Dcat Admin 约 **85%** 的核心功能，主要缺失集中在 **开发者工具** 和 **扩展系统** 方面。
 
 **已完成状态概览:**
 - ✅ **Form 表单**: 52+/53 种字段 (98%)
-- ✅ **Grid 网格**: 展示器、工具栏、高级功能已实现
+- ✅ **Grid 网格**: 展示器(25种)、工具栏、高级功能已实现
 - ✅ **Show 详情**: 基础功能 + 高级布局已实现
 - ✅ **Tree 树形**: Actions/Tools/拖拽/批量操作已实现
 - ✅ **布局系统**: Column/Row/Content/Section/响应式已实现
-- ✅ **Widgets 组件**: 16+/27 种组件 (60%)
+- ✅ **Widgets 组件**: 22/27 种组件 (85%)
 - ✅ **Actions 操作**: QuickEdit/ContextMenu/权限控制已实现
-- ❌ **RBAC 权限系统**: 角色管理UI、权限分配界面待实现
+- ✅ **RBAC 权限系统**: 角色管理UI、权限分配、菜单权限、操作日志、登录日志已实现
 - ❌ **开发者工具**: 代码生成、CLI工具待实现
 - ❌ **扩展系统**: 插件机制待实现
 
-**最后更新**: 2026-04-14
+**最后更新**: 2026-04-14 (Grid Displayers + Widgets 已完善)
 
 ---
 
@@ -30,33 +30,33 @@ GoAdmin 目前实现了 Dcat Admin 约 **75%** 的核心功能，主要缺失集
 ### 🔴 高优先级 (核心功能缺失)
 
 #### TODO-001: Grid 展示器系统 (Displayers) [任务 #1] ✅ 已完成
-> **状态**: 已实现 13 种常用展示器
+> **状态**: 已实现 25 种展示器
 
 - [x] 实现 Badge 展示器 - 徽章标签显示
 - [x] 实现 Button 展示器 - 按钮展示
-- [ ] 实现 Checkbox 展示器 - 复选框状态显示
+- [x] 实现 Checkbox 展示器 - 复选框状态显示
 - [x] 实现 Copyable 展示器 - 可复制文本
-- [ ] 实现 DialogTree 展示器 - 树形弹窗
-- [ ] 实现 Downloadable 展示器 - 可下载链接
+- [x] 实现 DialogTree 展示器 - 树形弹窗
+- [x] 实现 Downloadable 展示器 - 可下载链接
 - [x] 实现 DropdownActions 展示器 - 下拉操作菜单
 - [x] 实现 Editable 展示器 - 行内编辑
-- [ ] 实现 Expand 展示器 - 展开详情
+- [x] 实现 Expand 展示器 - 展开详情
 - [x] 实现 Image 展示器 - 图片预览
-- [ ] 实现 Input 展示器 - 输入框展示
+- [x] 实现 Input 展示器 - 输入框展示
 - [x] 实现 Label 展示器 - 标签样式
 - [x] 实现 Limit 展示器 - 文本截断
 - [x] 实现 Link 展示器 - 链接跳转
-- [ ] 实现 Modal 展示器 - 弹窗内容
-- [ ] 实现 Orderable 展示器 - 排序标识
+- [x] 实现 Modal 展示器 - 弹窗内容
+- [x] 实现 Orderable 展示器 - 排序标识
 - [x] 实现 ProgressBar 展示器 - 进度条
 - [x] 实现 QRCode 展示器 - 二维码生成
-- [ ] 实现 Radio 展示器 - 单选状态
-- [ ] 实现 Select 展示器 - 下拉选择显示
+- [x] 实现 Radio 展示器 - 单选状态
+- [x] 实现 Select 展示器 - 下拉选择显示
 - [x] 实现 SwitchDisplay 展示器 - 开关状态
-- [ ] 实现 SwitchGroup 展示器 - 开关组
+- [x] 实现 SwitchGroup 展示器 - 开关组
 - [x] 实现 Table 展示器 - 嵌套表格
-- [ ] 实现 Textarea 展示器 - 多行文本
-- [ ] 实现 Tree 展示器 - 树形展示
+- [x] 实现 Textarea 展示器 - 多行文本
+- [x] 实现 Tree 展示器 - 树形展示
 
 #### TODO-002: Grid 工具栏系统 (Tools) [任务 #7] ✅ 已完成
 > **状态**: 已实现 8 种工具
@@ -167,27 +167,38 @@ GoAdmin 目前实现了 Dcat Admin 约 **75%** 的核心功能，主要缺失集
 ### 🟢 低优先级 (增强功能)
 
 #### TODO-010: Widgets 组件扩展 (基础组件已完成) [任务 #5] ✅ 已完成
-> **状态**: 7+/27 种组件已实现，扩展组件已完成
+> **状态**: 22/27 种组件已实现
 
 **已实现的组件:**
 - [x] Alert - 提示框组件
+- [x] Box - 容器组件
+- [x] Callout - 提示框组件
 - [x] Card - 卡片容器
-- [x] Dropdown - 下拉菜单
-- [x] Form - 独立表单
-- [x] Tab - 标签页
 - [x] Chart - 基础图表
-- [x] Async - 异步加载
-
-**扩展组件:**
-- [x] Box 组件
-- [x] Callout 组件 - 提示框
-- [x] Code 组件 - 代码高亮
+- [x] Checkbox - 复选框组件 (Widget)
+- [x] Code - 代码高亮
 - [x] DarkModeSwitcher - 深色模式切换
-- [x] Dump 组件 - 数据调试
-- [x] Lazy 组件 - 懒加载
-- [x] Markdown 组件 - Markdown 渲染
-- [x] Tooltip 组件 - 工具提示
-- [x] Tree Widget - 树形组件
+- [x] DialogForm - 表单对话框
+- [x] DialogTable - 表格选择对话框
+- [x] Dropdown - 下拉菜单
+- [x] Dump - 数据调试
+- [x] Form - 独立表单
+- [x] Lazy - 懒加载
+- [x] LazyTable - 懒加载表格
+- [x] Markdown - Markdown 渲染
+- [x] Modal - 通用模态框
+- [x] Radio - 单选框组件 (Widget)
+- [x] Tab - 标签页
+- [x] Table - 表格组件 (Widget)
+- [x] Terminal - 终端组件
+- [x] Tooltip - 工具提示
+- [x] Tree - 树形组件
+
+**未实现的组件:**
+- [ ] Metrics/Bar - 柱状图
+- [ ] Metrics/Card - 指标卡片
+- [ ] Metrics/Donut - 环形图
+- [ ] Metrics/Line - 折线图
 
 #### TODO-011: Grid 高级功能 [任务 #3] ✅ 已完成
 > **状态**: 已实现
@@ -199,13 +210,15 @@ GoAdmin 目前实现了 Dcat Admin 约 **75%** 的核心功能，主要缺失集
 - [x] 实现列宽调整
 - [x] 实现列排序保存
 
-#### TODO-012: 认证与权限系统
-- [ ] 实现 RBAC 角色管理 UI
-- [ ] 实现权限分配界面
-- [ ] 实现菜单权限控制
-- [ ] 实现操作日志记录
-- [ ] 实现登录日志
-- [ ] 实现密码策略
+#### TODO-012: 认证与权限系统 [任务 #20] 🟡 部分完成
+> **状态**: 核心功能已实现，密码策略待完善
+
+- [x] 实现 RBAC 角色管理 UI - Users/Roles/Permissions/Menus 管理界面已存在
+- [x] 实现权限分配界面 - 角色-权限多选已支持
+- [x] 实现菜单权限控制 - Menu PermissionSlug 已支持
+- [x] 实现操作日志记录 - Repository Hook + AuditLog 已实现
+- [x] 实现登录日志 - LoginLog 模型 + 自动记录已实现
+- [ ] 实现密码策略 - 密码强度校验、过期提醒
 
 #### TODO-013: 开发者工具
 - [ ] 实现代码生成 (Scaffold) - 根据模型生成资源
@@ -236,7 +249,7 @@ GoAdmin 目前实现了 Dcat Admin 约 **75%** 的核心功能，主要缺失集
 | 功能类别 | Dcat Admin | GoAdmin 状态 | 优先级 |
 |---------|------------|-------------|--------|
 | **行操作** | Delete, Edit, QuickEdit, Show | Delete, Edit, Show, QuickEdit ✓ | - |
-| **展示器** | 28种展示器 | 13种常用展示器 ✓ | - |
+| **展示器** | 28种展示器 | 25种展示器 ✓ | - |
 | **工具栏** | 17种工具 | 8种核心工具 ✓ | - |
 | **数据导出** | Excel, CSV, PDF | 基础接口已实现 ✓ | - |
 | **复杂表头** | 支持 | 已实现 ✓ | - |
@@ -316,6 +329,23 @@ GoAdmin 目前实现了 Dcat Admin 约 **75%** 的核心功能，主要缺失集
 | Relation | ✓ | ✓ | - |
 | Row | ✓ | ✓ | - |
 
+### RBAC/权限系统
+
+| 功能 | Dcat Admin | GoAdmin 状态 | 优先级 |
+|------|------------|-------------|--------|
+| 用户管理 UI | ✓ | ✓ | - |
+| 角色管理 UI | ✓ | ✓ | - |
+| 权限管理 UI | ✓ | ✓ | - |
+| 菜单管理 UI | ✓ | ✓ | - |
+| 角色-权限分配 | ✓ | ✓ | - |
+| 用户-角色分配 | ✓ | ✓ | - |
+| 菜单权限控制 | ✓ | ✓ | - |
+| 操作审计日志 | ✓ | ✓ (Repository Hook 自动记录) | - |
+| 登录日志 | ✓ | ✓ (登录/登出/失败/锁定) | - |
+| 登录失败锁定 | ✓ | ✓ (5次失败锁定30分钟) | - |
+| 密码策略 | ✓ | ✗ (待实现) | 🟡 中 |
+| 操作权限控制 | ✓ | ✓ (AuthService.Authorize) | - |
+
 ### Widgets/组件
 
 | 组件 | Dcat Admin | GoAdmin 状态 | 优先级 |
@@ -324,7 +354,7 @@ GoAdmin 目前实现了 Dcat Admin 约 **75%** 的核心功能，主要缺失集
 | Box | ✓ | ✓ | - |
 | Callout | ✓ | ✓ | - |
 | Card | ✓ | ✓ | - |
-| Checkbox | ✓ | ✗ | 🟢 低 |
+| Checkbox | ✓ | ✓ | - |
 | Code | ✓ | ✓ | - |
 | DarkModeSwitcher | ✓ | ✓ | - |
 | DialogForm | ✓ | ✓ | - |
@@ -333,13 +363,13 @@ GoAdmin 目前实现了 Dcat Admin 约 **75%** 的核心功能，主要缺失集
 | Dump | ✓ | ✓ | - |
 | Form | ✓ | ✓ | - |
 | Lazy | ✓ | ✓ | - |
-| LazyTable | ✓ | ✗ | 🟢 低 |
+| LazyTable | ✓ | ✓ | - |
 | Markdown | ✓ | ✓ | - |
 | Modal | ✓ | ✓ | - |
-| Radio | ✓ | ✗ | 🟢 低 |
+| Radio | ✓ | ✓ | - |
 | Tab | ✓ | ✓ | - |
-| Table | ✓ | ✗ | 🟢 低 |
-| Terminal | ✓ | ✗ | 🟢 低 |
+| Table | ✓ | ✓ | - |
+| Terminal | ✓ | ✓ | - |
 | Tooltip | ✓ | ✓ | - |
 | Tree | ✓ | ✓ | - |
 | Metrics/Bar | ✓ | ✓ | - |

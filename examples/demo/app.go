@@ -15,6 +15,7 @@ import (
 	"github.com/zhenyangze/go-admin-build/examples/demo/models"
 	demoseed "github.com/zhenyangze/go-admin-build/examples/demo/seed"
 	"github.com/zhenyangze/goadmin"
+	"github.com/zhenyangze/goadmin/audit"
 	"github.com/zhenyangze/goadmin/auth"
 	"github.com/zhenyangze/goadmin/form"
 	"github.com/zhenyangze/goadmin/grid"
@@ -340,6 +341,7 @@ func buildWithDB(db *gorm.DB, uploadDir string) (*goadmin.App, error) {
 	registerCategories(app, db)
 	registerProjects(app, db)
 	registerAuditLogs(app, db)
+	registerLoginLogs(app, db)
 	registerTickets(app, db)
 	registerReports(app, db)
 
@@ -376,6 +378,10 @@ func buildWithDB(db *gorm.DB, uploadDir string) (*goadmin.App, error) {
 
 func migrate(db *gorm.DB) error {
 	if err := auth.AutoMigrate(db); err != nil {
+		return err
+	}
+	// 迁移登录日志和审计日志表
+	if err := db.AutoMigrate(&auth.LoginLog{}, &audit.AuditLog{}); err != nil {
 		return err
 	}
 	return db.AutoMigrate(&models.Category{}, &models.Article{}, &models.ArticleFAQ{}, &models.ArticleLink{}, &models.Project{}, &models.ProjectMilestone{}, &models.AuditLog{}, &models.Ticket{}, &models.ReportSnapshot{})
@@ -693,6 +699,18 @@ func registerArticles(app *goadmin.App, db *gorm.DB) {
 	repo.FilterFields = []string{"Status", "CategoryID"}
 	repo.Preloads = []string{"Category", "FAQs", "Links"}
 	repo.DefaultOrder = "id desc"
+
+	// 添加审计日志 Hook
+	auditHook := audit.NewHook(db, "articles")
+	auditHook.SetIdentityFunc(func(ctx context.Context) *goadmin.Identity {
+		if v := ctx.Value("identity"); v != nil {
+			if id, ok := v.(*goadmin.Identity); ok {
+				return id
+			}
+		}
+		return nil
+	})
+	repo.AddHook(auditHook)
 
 	app.Register(goadmin.Resource{
 		Name:           "articles",
@@ -1057,6 +1075,80 @@ func registerAuditLogs(app *goadmin.App, db *gorm.DB) {
 		},
 	})
 }
+
+
+func registerLoginLogs(app *goadmin.App, db *gorm.DB) {
+	repo := auth.NewLoginLogRepository(db)
+
+	app.Register(goadmin.Resource{
+		Name:           "login-logs",
+		Path:           "login-logs",
+		Title:          "Login Logs",
+		Description:    "User authentication activity log",
+		Permission:     "login-logs.view",
+		EmptyText:      "No login log entries yet.",
+		CapabilityTags: []string{"audit", "security"},
+		Repository:     repo,
+		BuildGrid: func(b *grid.Builder) {
+			b.DisableCreate = true
+			b.DisableEdit = true
+			b.DisableDelete = false
+
+			b.Column("ID", "ID").SortableColumn()
+			b.Column("Username", "Username")
+			b.Column("Action", "Action").Display(func(_ any, value any) template.HTML {
+				text := fmt.Sprint(value)
+				class := "badge badge-info"
+				switch text {
+				case "login":
+					class = "badge badge-success"
+				case "logout":
+					class = "badge badge-info"
+				case "failed":
+					class = "badge badge-danger"
+				case "locked":
+					class = "badge badge-warning"
+				}
+				return template.HTML(fmt.Sprintf(`<span class="%s">%s</span>`, class, template.HTMLEscapeString(text)))
+			})
+			b.Column("IP", "IP")
+			b.Column("UserAgent", "Browser").Display(func(_ any, value any) template.HTML {
+				text := fmt.Sprint(value)
+				if len(text) > 50 {
+					text = text[:50] + "..."
+				}
+				return template.HTML(template.HTMLEscapeString(text))
+			})
+			b.Column("Reason", "Reason").Display(func(_ any, value any) template.HTML {
+				text := fmt.Sprint(value)
+				if text == "" {
+					return template.HTML("-")
+				}
+				return template.HTML(template.HTMLEscapeString(text))
+			})
+			b.Column("CreatedAt", "Time").SortableColumn()
+
+			b.QuickSearch("Username", "IP", "UserAgent")
+			b.Filter("Action", "Action", grid.FilterSelect).WithOptions(
+				grid.Option{Value: "login", Label: "Login"},
+				grid.Option{Value: "logout", Label: "Logout"},
+				grid.Option{Value: "failed", Label: "Failed"},
+				grid.Option{Value: "locked", Label: "Locked"},
+			)
+		},
+		BuildShow: func(b *show.Builder) {
+			b.Field("ID", "ID")
+			b.Field("UserID", "User ID")
+			b.Field("Username", "Username")
+			b.Field("Action", "Action")
+			b.Field("IP", "IP")
+			b.Field("UserAgent", "User Agent")
+			b.Field("Reason", "Reason")
+			b.Field("CreatedAt", "Created At")
+		},
+	})
+}
+
 
 func registerTickets(app *goadmin.App, db *gorm.DB) {
 	repo := gormstore.New[models.Ticket](db)
