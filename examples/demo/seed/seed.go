@@ -48,6 +48,17 @@ func seedAuth(tx *gorm.DB) error {
 		}
 	}
 
+	// 创建角色，包括 administrator 角色
+	roles := []auth.Role{
+		{Name: "超级管理员", Slug: auth.AdministratorRole},
+		{Name: "管理员", Slug: "admin"},
+	}
+	for i := range roles {
+		if err := tx.Create(&roles[i]).Error; err != nil {
+			return err
+		}
+	}
+
 	menus := []auth.Menu{
 		{Title: "Dashboard", URI: "/"},
 		{Title: "Security"},
