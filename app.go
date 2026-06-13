@@ -1192,7 +1192,7 @@ type layoutData struct {
 
 type menuItemView struct {
 	Title    string
-	Icon     string
+	Icon     template.HTML
 	URL      string
 	Active   bool
 	Expanded bool
@@ -1313,10 +1313,11 @@ type gridActionView struct {
 }
 
 type paginationLink struct {
-	Label   string
-	URL     string
-	Active  bool
-	Current bool
+	Label    string
+	URL      string
+	Active   bool
+	Current  bool
+	Disabled bool
 }
 
 type formView struct {
